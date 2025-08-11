@@ -1,0 +1,13 @@
+#root {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+/* Weather component specific styles */
+.weather-container {
+  width: 100vw;
+  margin: 8px;
+  padding: 0;
+}
