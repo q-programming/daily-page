@@ -1,0 +1,45 @@
+{
+  "header": {
+    "morning": "Good Morning",
+    "afternoon": "Good Afternoon",
+    "evening": "Good Evening",
+    "night": "Good Night"
+  },
+  "weather": {
+    "title": "Next Hours",
+    "windSpeed": "Wind Speed",
+    "airQuality": "Air Quality",
+    "error": "Error",
+    "apiKeyRequired": "API key is required. Please add it in settings.",
+    "fetchError": "Failed to fetch weather data. Please check your API key and try again.",
+    "noData": "No weather data available.",
+    "loading": "Loading weather data...",
+    "airQualityLevels": {
+      "good": "Good",
+      "moderate": "Moderate",
+      "unhealthySensitive": "Unhealthy for Sensitive Groups",
+      "unhealthy": "Unhealthy",
+      "veryUnhealthy": "Very Unhealthy",
+      "hazardous": "Hazardous",
+      "unknown": "Unknown"
+    }
+  },
+  "settings": {
+    "title": "Weather Settings",
+    "apiKeyLabel": "AccuWeather API Key",
+    "apiKeyHelp": "Required for weather data",
+    "apiKeyPlaceholder": "Enter your AccuWeather API key",
+    "apiKeyDescription": "Enter your AccuWeather API key to fetch weather data. You can get a free API key from the",
+    "apiKeyLink": "AccuWeather Developer Portal",
+    "iqairApiKeyLabel": "IQAir API Key",
+    "iqairApiKeyHelp": "Required for air quality data",
+    "iqairApiKeyPlaceholder": "Enter your IQAir API key",
+    "iqairApiKeyDescription": "Enter your IQAir API key to fetch air quality data. You can get a free API key from the",
+    "iqairApiKeyLink": "IQAir API Dashboard",
+    "cityLabel": "Default City",
+    "cityPlaceholder": "e.g., London",
+    "cityHelp": "Optional: Leave blank to use device location",
+    "cancel": "Cancel",
+    "save": "Save"
+  }
+}

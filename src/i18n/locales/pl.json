@@ -1,0 +1,45 @@
+{
+  "header": {
+    "morning": "Dzień Dobry",
+    "afternoon": "Dzień Dobry",
+    "evening": "Dobry Wieczór",
+    "night": "Dobranoc"
+  },
+  "weather": {
+    "title": "Następne Godziny",
+    "windSpeed": "Prędkość Wiatru",
+    "airQuality": "Jakość Powietrza",
+    "error": "Błąd",
+    "apiKeyRequired": "Klucz API jest wymagany. Proszę dodać go w ustawieniach.",
+    "fetchError": "Nie udało się pobrać danych pogodowych. Sprawdź swój klucz API i spróbuj ponownie.",
+    "noData": "Brak dostępnych danych pogodowych.",
+    "loading": "Ładowanie danych pogodowych...",
+    "airQualityLevels": {
+      "good": "Dobra",
+      "moderate": "Umiarkowana",
+      "unhealthySensitive": "Niezdrowa dla Wrażliwych Osób",
+      "unhealthy": "Niezdrowa",
+      "veryUnhealthy": "Bardzo Niezdrowa",
+      "hazardous": "Niebezpieczna",
+      "unknown": "Nieznana"
+    }
+  },
+  "settings": {
+    "title": "Ustawienia Pogody",
+    "apiKeyLabel": "Klucz API AccuWeather",
+    "apiKeyHelp": "Wymagany do danych pogodowych",
+    "apiKeyPlaceholder": "Wprowadź klucz API AccuWeather",
+    "apiKeyDescription": "Wprowadź swój klucz API AccuWeather, aby pobrać dane pogodowe. Możesz uzyskać darmowy klucz API z",
+    "apiKeyLink": "Portalu Deweloperskiego AccuWeather",
+    "iqairApiKeyLabel": "Klucz API IQAir",
+    "iqairApiKeyHelp": "Wymagany do danych jakości powietrza",
+    "iqairApiKeyPlaceholder": "Wprowadź klucz API IQAir",
+    "iqairApiKeyDescription": "Wprowadź swój klucz API IQAir, aby pobrać dane jakości powietrza. Możesz uzyskać darmowy klucz API z",
+    "iqairApiKeyLink": "Panelu API IQAir",
+    "cityLabel": "Domyślne Miasto",
+    "cityPlaceholder": "np., Warszawa",
+    "cityHelp": "Opcjonalnie: Pozostaw puste, aby użyć lokalizacji urządzenia",
+    "cancel": "Anuluj",
+    "save": "Zapisz"
+  }
+}
