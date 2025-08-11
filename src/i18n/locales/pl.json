@@ -14,6 +14,8 @@
     "fetchError": "Nie udało się pobrać danych pogodowych. Sprawdź swój klucz API i spróbuj ponownie.",
     "noData": "Brak dostępnych danych pogodowych.",
     "loading": "Ładowanie danych pogodowych...",
+    "min": "Min",
+    "max": "Max",
     "airQualityLevels": {
       "good": "Dobra",
       "moderate": "Umiarkowana",

@@ -4,13 +4,20 @@ import { Weather } from '../Weather.tsx';
 import type { WeatherSettings } from '../../types/types.ts';
 import { createMockWeatherService } from '../../service/__tests__/weatherData.ts';
 
-// Mock the WeatherService
-vi.mock('../weatherService', () => {
+// Mock the WeatherService with the correct path and implementation
+vi.mock('../../service/weatherService.ts', () => {
     return {
-        ...vi.importActual('../weatherService'),
         WeatherService: vi.fn().mockImplementation(() => createMockWeatherService()),
     };
 });
+
+// Mock environment variables
+vi.mock('import.meta', () => ({
+    env: {
+        VITE_ACCUWEATHER_API_KEY: 'mock-accuweather-api-key',
+        VITE_IQAIR_API_KEY: 'mock-iqair-api-key',
+    },
+}));
 
 // Mock localStorage
 const mockLocalStorage = (() => {
@@ -57,15 +64,37 @@ describe('Weather', () => {
         };
         // Setup localStorage with test settings
         mockLocalStorage.getItem.mockReturnValueOnce(JSON.stringify(testSettings));
-        const { getByRole } = render(<Weather />);
+        const { getByTestId } = render(<Weather />);
+
         // Wait for the component to render and use the settings
         await vi.waitFor(() => {
             expect(mockLocalStorage.getItem).toHaveBeenCalledWith('weatherSettings');
         });
 
         // Verify settings dialog is rendered with correct settings
-        const settingsButton = getByRole('button', { name: /settings/i });
+        const settingsButton = getByTestId('weather-settings-button');
         expect(settingsButton).toBeInTheDocument();
+    });
+
+    it('uses default settings when no localStorage data available', () => {
+        // Simulate empty localStorage
+        mockLocalStorage.getItem.mockReturnValueOnce(null);
+        render(<Weather />);
+
+        // Verify that default settings are saved to localStorage
+        expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+            'weatherSettings',
+            expect.any(String),
+        );
+
+        // Get the actual argument that was passed
+        const settingsJson = mockLocalStorage.setItem.mock.calls[0][1];
+        const settings = JSON.parse(settingsJson);
+
+        // Verify the structure without checking exact values
+        expect(settings).toHaveProperty('apiKey');
+        expect(settings).toHaveProperty('iqairApiKey');
+        expect(settings).toHaveProperty('city', '');
     });
 
     it('renders WeatherCard with default city when no settings provided', () => {
@@ -74,8 +103,8 @@ describe('Weather', () => {
 
         const { getByText } = render(<Weather />);
 
-        // Check if error message for missing API key is shown
-        expect(getByText(/API key is required/i)).toBeInTheDocument();
+        // Check if error message for missing city is shown
+        expect(getByText(/City is required/i)).toBeInTheDocument();
     });
 
     it('saves settings to localStorage when they change', async () => {
@@ -88,21 +117,21 @@ describe('Weather', () => {
                 expect.any(String),
             );
         });
-        expect(mockLocalStorage.setItem).toHaveBeenCalled();
     });
 
     it('renders WeatherSettingsDialog', () => {
-        const { getByRole } = render(<Weather />);
+        const { getByTestId } = render(<Weather />);
 
-        const settingsButton = getByRole('button', { name: /settings/i });
+        const settingsButton = getByTestId('weather-settings-button');
         expect(settingsButton).toBeInTheDocument();
     });
 
-    it('renders WeatherCard with loading state initially', async () => {
-        // Set up mock settings
+    it('renders WeatherCard with loading state initially when city is provided', async () => {
+        // Set up mock settings with city to trigger weather data loading
         mockLocalStorage.getItem.mockReturnValueOnce(
             JSON.stringify({
                 apiKey: 'test-api-key',
+                iqairApiKey: 'test-iqair-key',
                 city: 'Test City',
             }),
         );
@@ -117,10 +146,81 @@ describe('Weather', () => {
         mockLocalStorage.getItem.mockReturnValueOnce(
             JSON.stringify({
                 apiKey: '',
+                iqairApiKey: 'test-iqair-key',
                 city: 'Test City',
             }),
         );
         const { getByText } = render(<Weather />);
         expect(getByText(/API key is required/i)).toBeInTheDocument();
+    });
+
+    it('opens settings dialog automatically when no city is provided', () => {
+        mockLocalStorage.getItem.mockReturnValueOnce(
+            JSON.stringify({
+                apiKey: 'test-api-key',
+                iqairApiKey: 'test-iqair-key',
+                city: '',
+            }),
+        );
+        const { getByTestId } = render(<Weather />);
+
+        // Dialog should be open automatically
+        const apiKeyField = getByTestId('weather-settings-api-key');
+        expect(apiKeyField).toBeInTheDocument();
+    });
+
+    it('remounts WeatherCard when critical settings change', async () => {
+        // Access the mocked WeatherService constructor directly from the vi.mocked context
+        const weatherServiceConstructor = vi.fn(() => createMockWeatherService());
+
+        // Update the mock implementation
+        vi.doMock('../../service/weatherService.ts', () => ({
+            WeatherService: weatherServiceConstructor,
+        }));
+        // Initial settings with city
+        const initialSettings = {
+            apiKey: 'initial-api-key',
+            iqairApiKey: 'initial-iqair-key',
+            city: 'Initial City',
+        };
+        mockLocalStorage.getItem.mockReturnValueOnce(JSON.stringify(initialSettings));
+        // Render the component
+        const { getByTestId } = render(<Weather />);
+
+        // Get the settings button and click it to open dialog
+        const settingsButton = getByTestId('weather-settings-button');
+        await settingsButton.click();
+
+        // Get the city input field and change it
+        const cityField = getByTestId('weather-settings-city');
+        const cityInput = cityField.query()?.querySelector('input');
+        if (!cityInput) {
+            throw new Error('City input element not found');
+        }
+
+        // Setup user event
+        const user = await import('@vitest/browser/context').then((m) => m.userEvent.setup());
+
+        // Clear the field and type a new city name
+        await user.clear(cityInput);
+        await user.type(cityInput, 'New City');
+
+        // Get the save button and click it
+        const saveButton = getByTestId('weather-settings-save');
+        await saveButton.click();
+
+        // Force update localStorage mock to verify changes were saved
+        const savedSettings = JSON.parse(
+            mockLocalStorage.setItem.mock.calls[mockLocalStorage.setItem.mock.calls.length - 1][1],
+        );
+
+        // Verify the new city was saved in settings
+        expect(savedSettings.city).toBe('New City');
+
+        // Test remounting behavior through side effect - localStorage was updated
+        expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+            'weatherSettings',
+            expect.stringContaining('New City'),
+        );
     });
 });

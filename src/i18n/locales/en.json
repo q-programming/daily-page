@@ -14,6 +14,8 @@
     "fetchError": "Failed to fetch weather data. Please check your API key and try again.",
     "noData": "No weather data available.",
     "loading": "Loading weather data...",
+    "min": "Min",
+    "max": "Max",
     "airQualityLevels": {
       "good": "Good",
       "moderate": "Moderate",

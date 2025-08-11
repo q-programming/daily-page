@@ -10,13 +10,11 @@ describe('WeatherSettingsDialog', () => {
         iqairApiKey: 'test-iqair-key',
         city: 'Test City',
     };
-
     it('renders settings button correctly', () => {
         const onSaveSettings = vi.fn();
         const { getByTestId } = render(
             <WeatherSettingsDialog settings={mockSettings} onSaveSettings={onSaveSettings} />,
         );
-
         const settingsButton = getByTestId('weather-settings-button');
         expect(settingsButton).toBeInTheDocument();
     });
@@ -32,6 +30,24 @@ describe('WeatherSettingsDialog', () => {
         await settingsButton.click();
 
         // Dialog should now be visible with its fields
+        expect(getByTestId('weather-settings-api-key')).toBeInTheDocument();
+        expect(getByTestId('weather-settings-iqair-api-key')).toBeInTheDocument();
+        expect(getByTestId('weather-settings-city')).toBeInTheDocument();
+    });
+
+    it('opens dialog automatically when no city is provided', () => {
+        const onSaveSettings = vi.fn();
+        const settingsWithNoCity: WeatherSettings = {
+            apiKey: 'test-api-key',
+            iqairApiKey: 'test-iqair-key',
+            city: '',
+        };
+
+        const { getByTestId } = render(
+            <WeatherSettingsDialog settings={settingsWithNoCity} onSaveSettings={onSaveSettings} />,
+        );
+
+        // Dialog should be visible immediately without clicking the button
         expect(getByTestId('weather-settings-api-key')).toBeInTheDocument();
         expect(getByTestId('weather-settings-iqair-api-key')).toBeInTheDocument();
         expect(getByTestId('weather-settings-city')).toBeInTheDocument();
@@ -59,6 +75,30 @@ describe('WeatherSettingsDialog', () => {
         expect(iqairApiKeyField).toHaveValue('test-iqair-key');
     });
 
+    it('pre-fills form fields when dialog opens automatically with no city', () => {
+        const onSaveSettings = vi.fn();
+        const settingsWithNoCity: WeatherSettings = {
+            apiKey: 'test-api-key',
+            iqairApiKey: 'test-iqair-key',
+            city: '',
+        };
+
+        const { getByTestId } = render(
+            <WeatherSettingsDialog settings={settingsWithNoCity} onSaveSettings={onSaveSettings} />,
+        );
+
+        // Dialog should be open automatically, check pre-filled values
+        const apiKeyField = getByTestId('weather-settings-api-key').query()?.querySelector('input');
+        const iqairApiKeyField = getByTestId('weather-settings-iqair-api-key')
+            .query()
+            ?.querySelector('input');
+        const cityField = getByTestId('weather-settings-city').query()?.querySelector('input');
+
+        expect(cityField).toHaveValue(''); // City should be empty
+        expect(apiKeyField).toHaveValue('test-api-key');
+        expect(iqairApiKeyField).toHaveValue('test-iqair-key');
+    });
+
     it('updates input values when typing', async () => {
         const { getByTestId } = render(
             <WeatherSettingsDialog
@@ -66,9 +106,7 @@ describe('WeatherSettingsDialog', () => {
                 onSaveSettings={vi.fn()}
             />,
         );
-        // Open dialog
-        const settingsButton = getByTestId('weather-settings-button');
-        await settingsButton.click();
+        // Dialog should be open automatically, no need to click button
         // Get input fields
         const apiKeyField = getByTestId('weather-settings-api-key');
         expect(apiKeyField).toBeInTheDocument();
@@ -99,6 +137,44 @@ describe('WeatherSettingsDialog', () => {
         expect(onSaveSettings).toHaveBeenCalledTimes(1);
     });
 
+    it('calls onSaveSettings when saving from automatically opened dialog', async () => {
+        const onSaveSettings = vi.fn();
+        const settingsWithNoCity: WeatherSettings = {
+            apiKey: 'test-api-key',
+            iqairApiKey: 'test-iqair-key',
+            city: '',
+        };
+
+        const { getByTestId } = render(
+            <WeatherSettingsDialog settings={settingsWithNoCity} onSaveSettings={onSaveSettings} />,
+        );
+
+        // Dialog should be open automatically
+        // Fill in a city
+        const cityField = getByTestId('weather-settings-city');
+        const cityInput = cityField.query()?.querySelector('input');
+        if (!cityInput) {
+            throw new Error('City input element not found');
+        }
+
+        const user = userEvent.setup();
+        await user.type(cityInput, 'New York');
+
+        // Click save button
+        const saveButton = getByTestId('weather-settings-save');
+        await saveButton.click();
+
+        // Check if onSaveSettings was called with updated city
+        expect(onSaveSettings).toHaveBeenCalledTimes(1);
+        expect(onSaveSettings).toHaveBeenCalledWith(
+            expect.objectContaining({
+                apiKey: 'test-api-key',
+                iqairApiKey: 'test-iqair-key',
+                city: 'New York',
+            }),
+        );
+    });
+
     it('does nothing when cancel button is clicked', async () => {
         const onSaveSettings = vi.fn();
         const { getByTestId } = render(
@@ -120,6 +196,24 @@ describe('WeatherSettingsDialog', () => {
         expect(onSaveSettings).not.toHaveBeenCalled();
     });
 
+    it('closes automatically opened dialog when cancel button is clicked', async () => {
+        const onSaveSettings = vi.fn();
+        const settingsWithNoCity: WeatherSettings = {
+            apiKey: 'test-api-key',
+            iqairApiKey: 'test-iqair-key',
+            city: '',
+        };
+        const { getByTestId } = render(
+            <WeatherSettingsDialog settings={settingsWithNoCity} onSaveSettings={onSaveSettings} />,
+        );
+        // Dialog should be visible automatically
+        expect(getByTestId('weather-settings-api-key')).toBeInTheDocument();
+        // Click cancel button
+        const cancelButton = getByTestId('weather-settings-cancel');
+        await cancelButton.click();
+        expect(onSaveSettings).not.toHaveBeenCalled();
+    });
+
     it('has disabled save button with empty API key', async () => {
         const onSaveSettings = vi.fn();
         const emptySettings: WeatherSettings = {
@@ -132,9 +226,7 @@ describe('WeatherSettingsDialog', () => {
             <WeatherSettingsDialog settings={emptySettings} onSaveSettings={onSaveSettings} />,
         );
 
-        // Open dialog
-        const settingsButton = getByTestId('weather-settings-button');
-        await settingsButton.click();
+        // Dialog should be open automatically, no need to click button
 
         // Save button should exist and be disabled
         const saveButton = getByTestId('weather-settings-save');

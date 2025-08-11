@@ -9,7 +9,6 @@ vi.mock('../../../../i18n/i18n', () => ({
         changeLanguage: vi.fn(),
     },
 }));
-
 describe('getWeatherIcon', () => {
     it('should return correct icon for known weather codes', () => {
         expect(getWeatherIcon(1)).toBe('wi:day-sunny');

@@ -16,14 +16,16 @@ i18n.use(LanguageDetector) // Detects user language
                 translation: plTranslations,
             },
         },
-        fallbackLng: 'pl', // Use English as fallback
+        fallbackLng: 'pl', // Use Polish as fallback
         interpolation: {
             escapeValue: false, // React already escapes values
         },
         detection: {
-            order: ['navigator', 'localStorage', 'htmlTag'],
+            order: ['localStorage', 'navigator', 'htmlTag', 'querystring'],
+            lookupLocalStorage: 'i18nextLng', // Key to use in localStorage
             caches: ['localStorage'],
         },
+        supportedLngs: ['en', 'pl'], // Explicitly define supported languages
     });
 
 export default i18n;

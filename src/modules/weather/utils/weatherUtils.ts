@@ -2,7 +2,6 @@
  * This file maps AccuWeather icon codes to Iconify weather icons
  */
 import i18n from '../../../i18n/i18n.ts';
-
 // Map AccuWeather icon codes to Iconify weather icons
 export const getWeatherIcon = (iconCode: number): string => {
     // The mapping is based on AccuWeather icon codes

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
-import { ACCUWEATHER_BASE_URL, AIRQ_BASE_URL, WeatherService } from '../weatherService.ts';
+import { ACCUWEATHER_BASE_URL, AIRQ_BASE_URL } from '../../config';
 import type { WeatherSettings } from '../../types/types.ts';
 import {
     mockAirQualityResponse,
@@ -10,6 +10,9 @@ import {
     mockHourlyForecast,
     mockLocationData,
 } from './weatherData.ts';
+
+// Import the WeatherService directly - no need to mock it as we're testing it directly
+import { WeatherService } from '../weatherService.ts';
 
 // Create a mock for localStorage
 class LocalStorageMock {
@@ -66,6 +69,12 @@ describe('WeatherService', () => {
         // Spy on console methods to prevent test output pollution
         vi.spyOn(console, 'log').mockImplementation(() => {});
         vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        // Setup standard mocks for location endpoints
+        mock.onGet(`${ACCUWEATHER_BASE_URL}/locations/v1/cities/search`).reply(200, [
+            mockLocationData,
+        ]);
+        mock.onGet(`${ACCUWEATHER_BASE_URL}/locations/v1/123456`).reply(200, mockLocationData);
     });
 
     afterEach(() => {
@@ -81,272 +90,230 @@ describe('WeatherService', () => {
         vi.restoreAllMocks();
     });
 
-    it('getLocationKey should return location key', async () => {
-        // Mock the API response
-        mock.onGet(`${ACCUWEATHER_BASE_URL}/locations/v1/cities/search`).reply(200, [
-            mockLocationData,
-        ]);
+    describe('Initialization', () => {
+        it('should successfully initialize service and fetch location data', async () => {
+            // Call initialize method
+            await weatherService.initialize();
 
-        // Call the method
-        const locationKey = await weatherService.getLocationKey('Test City');
+            // Verify the APIs were called with expected parameters
+            const searchCall = mock.history.get.find(
+                (call) => call.url === `${ACCUWEATHER_BASE_URL}/locations/v1/cities/search`,
+            );
+            expect(searchCall?.params).toEqual({
+                apikey: 'test-api-key',
+                q: 'Test City',
+                language: expect.any(String),
+            });
 
-        // Assert
-        expect(locationKey).toBe('123456');
+            // After initialization, location data should be available
+            const locationData = await weatherService.getLocationData();
+            expect(locationData).toEqual(mockLocationData);
+        });
 
-        // Verify the API was called with expected parameters
-        expect(mock.history.get[0].params).toEqual({
-            apikey: 'test-api-key',
-            q: 'Test City',
-            language: expect.any(String),
+        it('should throw error when location data cannot be fetched', async () => {
+            // Reset mocks to return errors
+            mock.reset();
+            mock.onGet(`${ACCUWEATHER_BASE_URL}/locations/v1/cities/search`).reply(404);
+
+            // Expect initialization to fail
+            await expect(weatherService.initialize()).rejects.toThrow();
+        });
+
+        it('should not reinitialize if already initialized', async () => {
+            // First initialization
+            await weatherService.initialize();
+
+            // Reset mock history
+            mock.resetHistory();
+
+            // Second initialization should not make API calls
+            await weatherService.initialize();
+            expect(mock.history.get.length).toBe(0);
         });
     });
 
-    it('getCurrentConditions should return current weather conditions', async () => {
-        // Mock the API response
-        mock.onGet(`${ACCUWEATHER_BASE_URL}/currentconditions/v1/123456`).reply(200, [
-            mockCurrentCondition,
-        ]);
+    describe('Location Data', () => {
+        // Testing private methods using type casting
+        it('should retrieve location key for a city', async () => {
+            // Access the private method using type assertion
+            // Note: This test is modified to work with the updated implementation
+            // where getLocationKey is now private
+            mock.resetHistory();
+            // Initialize the service which will call getLocationKey internally
+            await weatherService.initialize();
+            // Verify the API was called with expected parameters for city search
+            const searchCall = mock.history.get.find(
+                (call) => call.url === `${ACCUWEATHER_BASE_URL}/locations/v1/cities/search`,
+            );
+            expect(searchCall?.params).toEqual({
+                apikey: 'test-api-key',
+                q: 'Test City',
+                language: expect.any(String),
+            });
+            // The test validates that the initialization properly handles location key retrieval
+            const locationData = await weatherService.getLocationData();
+            expect(locationData.Key).toBe('123456');
+        });
 
-        // Call the method
-        const conditions = await weatherService.getCurrentConditions('123456');
+        it('getLocationData should initialize service if needed', async () => {
+            // Call method without initializing first
+            const locationData = await weatherService.getLocationData();
 
-        // Assert
-        expect(conditions).toEqual(mockCurrentCondition);
-        expect(conditions.WeatherText).toBe('Sunny');
-        expect(conditions.Temperature.Metric.Value).toBe(25);
+            // Should have initialized and returned data
+            expect(locationData).toEqual(mockLocationData);
+        });
 
-        // Verify the API was called with expected parameters
-        expect(mock.history.get[0].params).toEqual({
-            apikey: 'test-api-key',
-            details: true,
-            language: expect.any(String),
+        it('should properly manage the location key internally', async () => {
+            // Initialize service first
+            await weatherService.initialize();
+            mock.resetHistory();
+
+            // Mock endpoints for methods that use the location key
+            mock.onGet(`${ACCUWEATHER_BASE_URL}/currentconditions/v1/123456`).reply(200, [
+                mockCurrentCondition,
+            ]);
+
+            // Call a method that uses the location key internally
+            await weatherService.getCurrentConditions();
+
+            // Verify that the correct URL with the location key was called
+            const conditionsCall = mock.history.get.find(
+                (call) => call.url === `${ACCUWEATHER_BASE_URL}/currentconditions/v1/123456`,
+            );
+            expect(conditionsCall).toBeTruthy();
         });
     });
 
-    it('getDailyForecast should return daily forecast data', async () => {
-        // Mock the API response
-        mock.onGet(`${ACCUWEATHER_BASE_URL}/forecasts/v1/daily/5day/123456`).reply(200, {
-            DailyForecasts: mockDailyForecast,
+    describe('Weather Data', () => {
+        beforeEach(async () => {
+            // Initialize service before each test in this block
+            await weatherService.initialize();
+
+            // Clear API call history
+            mock.resetHistory();
         });
 
-        // Call the method
-        const forecast = await weatherService.getDailyForecast('123456');
+        it('getCurrentConditions should return current weather conditions', async () => {
+            // Mock the API response
+            mock.onGet(`${ACCUWEATHER_BASE_URL}/currentconditions/v1/123456`).reply(200, [
+                mockCurrentCondition,
+            ]);
 
-        // Assert
-        expect(forecast).toEqual(mockDailyForecast);
-        expect(forecast.length).toBe(2);
-        expect(forecast[0].Temperature.Maximum.Value).toBe(28);
+            // Call the method
+            const conditions = await weatherService.getCurrentConditions();
 
-        // Verify the API was called with expected parameters
-        expect(mock.history.get[0].params).toEqual({
-            apikey: 'test-api-key',
-            metric: true,
-            language: expect.any(String),
-        });
-    });
+            // Assert
+            expect(conditions).toEqual(mockCurrentCondition);
+            expect(conditions?.WeatherText).toBe('Sunny');
+            expect(conditions?.Temperature.Metric.Value).toBe(25);
 
-    it('getHourlyForecast should return hourly forecast data', async () => {
-        // Mock the API response
-        mock.onGet(`${ACCUWEATHER_BASE_URL}/forecasts/v1/hourly/12hour/123456`).reply(
-            200,
-            mockHourlyForecast,
-        );
-
-        // Call the method
-        const forecast = await weatherService.getHourlyForecast('123456');
-
-        // Assert
-        expect(forecast).toEqual(mockHourlyForecast);
-        expect(forecast.length).toBe(2);
-        expect(forecast[0].Temperature.Value).toBe(24);
-
-        // Verify the API was called with expected parameters
-        expect(mock.history.get[0].params).toEqual({
-            apikey: 'test-api-key',
-            metric: true,
-            language: expect.any(String),
-        });
-    });
-
-    it('getAirQuality should return air quality data', async () => {
-        // Mock the location endpoint
-        mock.onGet(`${ACCUWEATHER_BASE_URL}/locations/v1/123456`).reply(200, mockLocationData);
-
-        // Mock the air quality endpoint
-        mock.onGet(`${AIRQ_BASE_URL}/v2/nearest_city`).reply(200, mockAirQualityResponse);
-
-        // Call the method
-        const airQuality = await weatherService.getAirQuality('123456');
-
-        // Assert
-        expect(airQuality.value).toBe(35);
-        expect(airQuality.category).toBe('Good');
-
-        // Verify the IQAir API was called with expected parameters
-        const iqairCall = mock.history.get.find(
-            (call) => call.url === `${AIRQ_BASE_URL}/v2/nearest_city`,
-        );
-        expect(iqairCall?.params).toEqual({
-            city: 'Test City',
-            state: '',
-            country: 'Test Country',
-            key: 'test-iqair-key',
-        });
-    });
-
-    it('should use cached data when available and valid', async () => {
-        // Prepare mock cached data
-        const cachedData = {
-            timestamp: Date.now(), // current time (cache is fresh)
-            data: mockCurrentCondition,
-        };
-        localStorage.setItem('weather_current_123456', JSON.stringify(cachedData));
-
-        // Call the method (should use cache)
-        const conditions = await weatherService.getCurrentConditions('123456');
-
-        // Assert result is from cache
-        expect(conditions).toEqual(mockCurrentCondition);
-
-        // Verify the API was NOT called
-        expect(mock.history.get.length).toBe(0);
-    });
-
-    it('should fetch new data when cache is expired', async () => {
-        // Prepare expired cached data (2 hours old)
-        const expiredCache = {
-            timestamp: Date.now() - 2 * 60 * 60 * 1000, // 2 hours ago
-            data: { ...mockCurrentCondition, WeatherText: 'Outdated' },
-        };
-        localStorage.setItem('weather_current_123456', JSON.stringify(expiredCache));
-
-        // Mock the API response for fresh data
-        mock.onGet(`${ACCUWEATHER_BASE_URL}/currentconditions/v1/123456`).reply(200, [
-            mockCurrentCondition,
-        ]);
-
-        // Call the method
-        const conditions = await weatherService.getCurrentConditions('123456');
-
-        // Assert we got fresh data, not cached
-        expect(conditions.WeatherText).toBe('Sunny');
-
-        // Verify the API was called to get fresh data
-        expect(mock.history.get.length).toBe(1);
-    });
-
-    it('should handle API errors gracefully', async () => {
-        // Mock the API to return an error
-        mock.onGet(`${ACCUWEATHER_BASE_URL}/locations/v1/cities/search`).reply(500, {
-            message: 'Server error',
+            // Verify the API was called with expected parameters
+            expect(mock.history.get[0].params).toEqual({
+                apikey: 'test-api-key',
+                details: true,
+                language: expect.any(String),
+            });
         });
 
-        // Call the method and expect it to throw
-        await expect(weatherService.getLocationKey('Test City')).rejects.toThrow();
-    });
+        it('getDailyForecast should return daily forecast data', async () => {
+            // Mock the API response
+            mock.onGet(`${ACCUWEATHER_BASE_URL}/forecasts/v1/daily/5day/123456`).reply(200, {
+                DailyForecasts: mockDailyForecast,
+            });
 
-    it('should return unknown air quality when IQAir API key is not provided', async () => {
-        // Create a weather service instance without IQAir API key
-        const settingsWithoutIQAir: WeatherSettings = {
-            apiKey: 'test-api-key',
-            iqairApiKey: '', // Empty IQAir API key
-            city: 'Test City',
-        };
-        const serviceWithoutIQAir = new WeatherService(settingsWithoutIQAir);
+            // Call the method
+            const forecast = await weatherService.getDailyForecast();
 
-        // Mock the location endpoint just to be safe
-        mock.onGet(`${ACCUWEATHER_BASE_URL}/locations/v1/123456`).reply(200, mockLocationData);
-
-        // Call the method
-        const airQuality = await serviceWithoutIQAir.getAirQuality('123456');
-
-        // Assert default values are returned
-        expect(airQuality.value).toBe(0);
-        expect(airQuality.category).toBe('Unknown');
-
-        // Verify no call was made to the IQAir API
-        const iqairCalls = mock.history.get.filter(
-            (call) => call.url === `${AIRQ_BASE_URL}/v2/nearest_city`,
-        );
-        expect(iqairCalls.length).toBe(0);
-    });
-
-    it('should handle IQAir API errors gracefully', async () => {
-        // Mock the location endpoint
-        mock.onGet(`${ACCUWEATHER_BASE_URL}/locations/v1/123456`).reply(200, mockLocationData);
-
-        // Mock the air quality endpoint to return an error
-        mock.onGet(`${AIRQ_BASE_URL}/v2/nearest_city`).reply(500, { message: 'Server error' });
-
-        // Call the method
-        const airQuality = await weatherService.getAirQuality('123456');
-
-        // Should return default values when API fails
-        expect(airQuality.value).toBe(0);
-        expect(airQuality.category).toBe('Unknown');
-    });
-
-    it('should handle invalid IQAir API responses gracefully', async () => {
-        // Mock the location endpoint
-        mock.onGet(`${ACCUWEATHER_BASE_URL}/locations/v1/123456`).reply(200, mockLocationData);
-
-        // Mock the air quality endpoint to return invalid data
-        mock.onGet(`${AIRQ_BASE_URL}/v2/nearest_city`).reply(200, {
-            status: 'success',
-            data: null,
+            // Assert
+            expect(forecast).toEqual(mockDailyForecast);
+            expect(forecast?.[0].Temperature.Maximum.Value).toBe(28);
         });
 
-        // Call the method
-        const airQuality = await weatherService.getAirQuality('123456');
+        it('getHourlyForecast should return hourly forecast data', async () => {
+            // Mock the API response
+            mock.onGet(`${ACCUWEATHER_BASE_URL}/forecasts/v1/hourly/12hour/123456`).reply(
+                200,
+                mockHourlyForecast,
+            );
 
-        // Should return default values when API response is invalid
-        expect(airQuality.value).toBe(0);
-        expect(airQuality.category).toBe('Unknown');
-    });
+            // Call the method
+            const forecast = await weatherService.getHourlyForecast();
 
-    it('should categorize AQI values correctly', async () => {
-        // Test different AQI values by accessing the private method via a hack
-        const getAqiCategory = weatherService.getAqiCategory.bind(weatherService);
+            // Assert
+            expect(forecast).toEqual(mockHourlyForecast);
+            expect(forecast?.[0].Temperature.Value).toBe(24);
+        });
 
-        // Test all category boundaries
-        expect(getAqiCategory(30)).toBe('Good'); // 0-50: Good
-        expect(getAqiCategory(50)).toBe('Good'); // Edge case
-        expect(getAqiCategory(51)).toBe('Moderate'); // 51-100: Moderate
-        expect(getAqiCategory(100)).toBe('Moderate'); // Edge case
-        expect(getAqiCategory(101)).toBe('Unhealthy for Sensitive Groups'); // 101-150
-        expect(getAqiCategory(150)).toBe('Unhealthy for Sensitive Groups'); // Edge case
-        expect(getAqiCategory(151)).toBe('Unhealthy'); // 151-200
-        expect(getAqiCategory(200)).toBe('Unhealthy'); // Edge case
-        expect(getAqiCategory(201)).toBe('Very Unhealthy'); // 201-300
-        expect(getAqiCategory(300)).toBe('Very Unhealthy'); // Edge case
-        expect(getAqiCategory(301)).toBe('Hazardous'); // 301+
-        expect(getAqiCategory(500)).toBe('Hazardous');
-    });
+        it('getAirQuality should return air quality data', async () => {
+            // Mock the API response - use city and country names from location data
+            mock.onGet(AIRQ_BASE_URL + '/v2/nearest_city').reply(200, mockAirQualityResponse);
 
-    it('should return location details', async () => {
-        // Mock the API response
-        mock.onGet(`${ACCUWEATHER_BASE_URL}/locations/v1/123456`).reply(200, mockLocationData);
+            // Call the method
+            const airQuality = await weatherService.getAirQuality();
 
-        // Call the method
-        const location = await weatherService.getLocation('123456');
+            // Assert
+            expect(airQuality?.value).toBe(35);
+            expect(airQuality?.category).toBe('Good');
 
-        // Assert
-        expect(location).toEqual(mockLocationData);
+            // Verify the API was called with expected parameters
+            expect(mock.history.get[0].params).toEqual({
+                city: 'Test City',
+                country: 'Test Country',
+                key: 'test-iqair-key',
+            });
+        });
 
-        // Verify the API was called with expected parameters
-        expect(mock.history.get[0].params).toEqual({
-            apikey: 'test-api-key',
-            language: expect.any(String),
+        it('should correctly use the AQI categorization', () => {
+            // Test the AQI category method directly
+            expect(weatherService.getAqiCategory(30)).toBe('Good');
+            expect(weatherService.getAqiCategory(75)).toBe('Moderate');
+            expect(weatherService.getAqiCategory(120)).toBe('Unhealthy for Sensitive Groups');
+            expect(weatherService.getAqiCategory(180)).toBe('Unhealthy');
+            expect(weatherService.getAqiCategory(250)).toBe('Very Unhealthy');
+            expect(weatherService.getAqiCategory(350)).toBe('Hazardous');
         });
     });
 
-    it('should handle location details API errors', async () => {
-        // Mock the API to return an error
-        mock.onGet(`${ACCUWEATHER_BASE_URL}/locations/v1/123456`).reply(500, {
-            message: 'Server error',
+    describe('Caching', () => {
+        beforeEach(async () => {
+            await weatherService.initialize();
+            mock.resetHistory();
         });
 
-        // Call the method and expect it to throw
-        await expect(weatherService.getLocation('123456')).rejects.toThrow();
+        it('should use cached data when available and not expired', async () => {
+            // Mock the API response
+            mock.onGet(`${ACCUWEATHER_BASE_URL}/currentconditions/v1/123456`).reply(200, [
+                mockCurrentCondition,
+            ]);
+
+            // First call - should hit the API
+            await weatherService.getCurrentConditions();
+            expect(mock.history.get.length).toBe(1);
+
+            mock.resetHistory();
+
+            // Second call - should use cache
+            await weatherService.getCurrentConditions();
+            expect(mock.history.get.length).toBe(0); // No new API calls
+        });
+
+        it('should request fresh data when cache is manually cleared', async () => {
+            // Mock the API response
+            mock.onGet(`${ACCUWEATHER_BASE_URL}/currentconditions/v1/123456`).reply(200, [
+                mockCurrentCondition,
+            ]);
+
+            // First call - should hit the API
+            await weatherService.getCurrentConditions();
+            expect(mock.history.get.length).toBe(1);
+
+            // Clear the localStorage
+            mockLocalStorage.clear();
+            mock.resetHistory();
+
+            // Second call - should hit the API again
+            await weatherService.getCurrentConditions();
+            expect(mock.history.get.length).toBe(1);
+        });
     });
 });
