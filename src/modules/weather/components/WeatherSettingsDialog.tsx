@@ -22,7 +22,7 @@ interface WeatherSettingsProps {
 
 export const WeatherSettingsDialog = ({ settings, onSaveSettings }: WeatherSettingsProps) => {
     const { t } = useTranslation();
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(!settings.city);
     const [apiKey, setApiKey] = useState(settings.apiKey || '');
     const [iqairApiKey, setIqairApiKey] = useState(settings.iqairApiKey || '');
     const [city, setCity] = useState(settings.city || '');
@@ -30,11 +30,9 @@ export const WeatherSettingsDialog = ({ settings, onSaveSettings }: WeatherSetti
     const handleOpen = () => {
         setOpen(true);
     };
-
     const handleClose = () => {
         setOpen(false);
     };
-
     const handleSave = async () => {
         onSaveSettings({
             apiKey,
@@ -54,7 +52,6 @@ export const WeatherSettingsDialog = ({ settings, onSaveSettings }: WeatherSetti
             >
                 <SettingsIcon fontSize='small' />
             </IconButton>
-
             <Dialog
                 open={open}
                 onClose={handleClose}

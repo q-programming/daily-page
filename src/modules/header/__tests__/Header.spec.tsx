@@ -9,6 +9,7 @@ describe('Header', () => {
         const headerText = getByTestId('header-greeting');
         expect(headerText).toBeInTheDocument();
     });
+
     it('should call toggle function on click of button', async () => {
         const onToggleTheme = vi.fn();
         const { getByTestId } = render(<Header onToggleTheme={onToggleTheme} />);

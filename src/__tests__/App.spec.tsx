@@ -3,7 +3,7 @@ import { render } from 'vitest-browser-react';
 import App from '../App.tsx';
 
 // Only mock the Weather component
-vi.mock('../Weather/Weather', () => ({
+vi.mock('../modules/weather/components/Weather', () => ({
     Weather: vi.fn(() => <div data-testid='mock-weather'>Weather Component</div>),
 }));
 

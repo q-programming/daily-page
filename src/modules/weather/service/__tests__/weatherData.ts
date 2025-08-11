@@ -96,7 +96,6 @@ export const mockHourlyForecast: HourlyForecast[] = [
         IconPhrase: 'Sunny',
     },
 ];
-
 // Mock air quality response
 export const mockAirQualityResponse = {
     status: 'success',
@@ -108,19 +107,19 @@ export const mockAirQualityResponse = {
         },
     },
 };
-
 // Mock air quality data
 export const mockAirQuality = {
     value: 35,
     category: 'Good',
 };
-
-// Create a mock WeatherService implementation
+// Create a mock WeatherService implementation that matches our updated implementation
 export const createMockWeatherService = () => ({
-    getLocationKey: vi.fn().mockResolvedValue(mockLocationData.Key),
+    // Add the initialize method
+    initialize: vi.fn().mockResolvedValue(undefined),
+    // Updated method name from getLocation to getLocationData
+    getLocationData: vi.fn().mockResolvedValue(mockLocationData),
     getCurrentConditions: vi.fn().mockResolvedValue(mockCurrentCondition),
     getHourlyForecast: vi.fn().mockResolvedValue(mockHourlyForecast),
     getDailyForecast: vi.fn().mockResolvedValue(mockDailyForecast),
-    getLocation: vi.fn().mockResolvedValue(mockLocationData),
     getAirQuality: vi.fn().mockResolvedValue(mockAirQuality),
 });

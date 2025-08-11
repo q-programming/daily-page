@@ -23,10 +23,9 @@ import { getWeatherIcon, formatHour, getAqiInfo } from '../utils/weatherUtils.ts
 
 interface WeatherCardProps {
     settings: WeatherSettings;
-    city?: string;
 }
 
-export const WeatherCard = ({ settings, city = 'New York' }: WeatherCardProps) => {
+export const WeatherCard = ({ settings }: WeatherCardProps) => {
     const theme = useTheme();
     const { t } = useTranslation();
     const [loading, setLoading] = useState<boolean>(true);
@@ -39,35 +38,61 @@ export const WeatherCard = ({ settings, city = 'New York' }: WeatherCardProps) =
         min: number;
         max: number;
     } | null>(null);
+    const [weatherService, setWeatherService] = useState<WeatherService | null>(null);
 
+    // Create and initialize weather service
     useEffect(() => {
-        const fetchWeatherData = async () => {
+        const initWeatherService = async () => {
             if (!settings.apiKey) {
                 setError('API key is required. Please add it in settings.');
+                setLoading(false);
+                return;
+            }
+            if (!settings.city) {
+                setError('City is required. Please add it in settings.');
                 setLoading(false);
                 return;
             }
 
             try {
                 setLoading(true);
-                const weatherService = new WeatherService(settings);
+                // Initialize weather service with current settings
+                const service = new WeatherService(settings);
+                // Initialize the service - this will handle location lookup internally
+                await service.initialize();
+                setWeatherService(service);
+            } catch (err) {
+                console.error('Error initializing weather service:', err);
+                setError(
+                    'Failed to initialize weather service. Please check your API key and city.',
+                );
+                setLoading(false);
+            }
+        };
 
-                // Get location key (either from settings or by city name)
-                const locationKey =
-                    settings.locationKey || (await weatherService.getLocationKey(city));
+        initWeatherService().then(() => {
+            setLoading(false);
+        });
+    }, [settings]);
 
+    // Fetch weather data when weatherService is available
+    useEffect(() => {
+        const fetchWeatherData = async () => {
+            if (!weatherService) return;
+
+            try {
+                setLoading(true);
                 // Fetch all data in parallel
                 const [conditions, hourly, location, airQualityData, dailyForecast] =
                     await Promise.all([
-                        weatherService.getCurrentConditions(locationKey),
-                        weatherService.getHourlyForecast(locationKey),
-                        weatherService.getLocation(locationKey),
-                        weatherService.getAirQuality(locationKey),
-                        weatherService.getDailyForecast(locationKey),
+                        weatherService.getCurrentConditions(),
+                        weatherService.getHourlyForecast(),
+                        weatherService.getLocationData(),
+                        weatherService.getAirQuality(),
+                        weatherService.getDailyForecast(),
                     ]);
-
                 setCurrentConditions(conditions);
-                setHourlyForecast(hourly.slice(0, 5)); // Get first 5 hours
+                setHourlyForecast(hourly?.slice(0, 5) || []); // Get first 5 hours
                 setLocationData(location);
                 setAirQuality(airQualityData);
 
@@ -89,21 +114,19 @@ export const WeatherCard = ({ settings, city = 'New York' }: WeatherCardProps) =
         };
 
         fetchWeatherData();
-    }, [settings, city]);
-
+    }, [weatherService]);
     if (loading) {
         return (
             <Card sx={{ minWidth: 275, textAlign: 'center', p: 2 }}>
                 <CardContent>
                     <CircularProgress />
                     <Typography variant='body2' mt={2}>
-                        {t('Loading weather data...')}
+                        {t('weather.loading')}
                     </Typography>
                 </CardContent>
             </Card>
         );
     }
-
     if (error) {
         return (
             <Card
@@ -125,12 +148,11 @@ export const WeatherCard = ({ settings, city = 'New York' }: WeatherCardProps) =
             </Card>
         );
     }
-
     if (!currentConditions || !locationData) {
         return (
             <Card sx={{ minWidth: 275, p: 2 }}>
                 <CardContent>
-                    <Typography variant='body2'>{t('No weather data available.')}</Typography>
+                    <Typography variant='body2'>{t('weather.noData')}</Typography>
                 </CardContent>
             </Card>
         );
@@ -190,8 +212,8 @@ export const WeatherCard = ({ settings, city = 'New York' }: WeatherCardProps) =
                             </Typography>
                             {minMaxTemp && (
                                 <Typography variant='body2' color='text.secondary'>
-                                    {t('Min')}: {Math.round(minMaxTemp.min)}°C / {t('Max')}:{' '}
-                                    {Math.round(minMaxTemp.max)}°C
+                                    {t('weather.min')}: {Math.round(minMaxTemp.min)}°C /{' '}
+                                    {t('weather.max')}: {Math.round(minMaxTemp.max)}°C
                                 </Typography>
                             )}
                         </Box>

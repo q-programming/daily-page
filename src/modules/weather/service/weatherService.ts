@@ -6,10 +6,10 @@ import type {
     HourlyForecast,
     LocationData,
     WeatherSettings,
+    AirQualityData,
 } from '../types/types.ts';
+import { ACCUWEATHER_BASE_URL, AIRQ_BASE_URL } from '../config';
 
-export const ACCUWEATHER_BASE_URL = 'https://dataservice.accuweather.com';
-export const AIRQ_BASE_URL = 'https://api.airvisual.com';
 const CACHE_DURATION = 60 * 60 * 1000;
 
 // Cache keys as constants instead of enum
@@ -30,11 +30,60 @@ interface CachedData<T> {
 export class WeatherService {
     private readonly accuweatherApiKey: string;
     private readonly iqairApiKey: string;
+    private readonly city: string;
+    private locationData: LocationData | null = null;
+    private locationKey: string | null = null;
+    private initialized = false;
 
     constructor(settings: WeatherSettings) {
-        // Try to get API keys from environment variables first, then fall back to settings
-        this.accuweatherApiKey = settings.apiKey || import.meta.env.VITE_ACCUWEATHER_API_KEY;
-        this.iqairApiKey = settings.iqairApiKey || import.meta.env.VITE_IQAIR_API_KEY;
+        this.accuweatherApiKey = settings.apiKey;
+        this.iqairApiKey = settings.iqairApiKey;
+        this.city = settings.city || '';
+    }
+
+    // Initialize service and get location data
+    public async initialize(): Promise<void> {
+        if (this.initialized) {
+            return;
+        }
+
+        try {
+            if (!this.city) {
+                throw new Error('City name is required for initialization');
+            }
+
+            // Fetch location data first
+            const locationKey = await this.getLocationKey(this.city);
+
+            if (!locationKey) {
+                throw new Error(`Location key not found for city: ${this.city}`);
+            }
+
+            this.locationKey = locationKey;
+
+            // Get and store location details
+            this.locationData = await this.getLocationDetails(this.locationKey);
+            this.initialized = true;
+        } catch (error) {
+            console.error('Error initializing weather service:', error);
+            throw error;
+        }
+    }
+
+    // Get cached location data or reinitialize if needed
+    public async getLocationData(): Promise<LocationData> {
+        if (!this.initialized || !this.locationData) {
+            await this.initialize();
+        }
+        return this.locationData as LocationData;
+    }
+
+    // Get cached location key or reinitialize if needed
+    private async getActiveLocationKey(): Promise<string> {
+        if (!this.initialized || !this.locationKey) {
+            await this.initialize();
+        }
+        return this.locationKey as string;
     }
 
     // Generic function to get cached data or fetch new data
@@ -73,10 +122,14 @@ export class WeatherService {
         return freshData;
     }
 
-    async getLocationKey(cityName: string): Promise<string> {
+    private async getLocationKey(cityName: string): Promise<string | null> {
+        if (!cityName) {
+            console.warn('City name is empty, cannot fetch location key');
+            return Promise.resolve(null);
+        }
         const cacheKey = `${CacheKey.LOCATION}${cityName.toLowerCase()}`;
 
-        return this.getWithCache<string>(cacheKey, async () => {
+        return this.getWithCache<string | null>(cacheKey, async () => {
             try {
                 const response = await axios.get(
                     `${ACCUWEATHER_BASE_URL}/locations/v1/cities/search`,
@@ -93,18 +146,44 @@ export class WeatherService {
                     const location = response.data[0] as LocationData;
                     return location.Key;
                 }
-                throw new Error('Location not found');
+                return null;
             } catch (error) {
                 console.error('Error fetching location key:', error);
+                return null;
+            }
+        });
+    }
+
+    private async getLocationDetails(locationKey: string): Promise<LocationData> {
+        const cacheKey = `${CacheKey.LOCATION}_details_${locationKey}`;
+        return this.getWithCache<LocationData>(cacheKey, async () => {
+            try {
+                const response = await axios.get(
+                    `${ACCUWEATHER_BASE_URL}/locations/v1/${locationKey}`,
+                    {
+                        params: {
+                            apikey: this.accuweatherApiKey,
+                            language: i18n.language,
+                        },
+                    },
+                );
+
+                if (response.data) {
+                    return response.data as LocationData;
+                }
+                throw new Error('Location details not found');
+            } catch (error) {
+                console.error('Error fetching location details:', error);
                 throw error;
             }
         });
     }
 
-    async getCurrentConditions(locationKey: string): Promise<CurrentCondition> {
+    async getCurrentConditions(): Promise<CurrentCondition | null> {
+        const locationKey = await this.getActiveLocationKey();
         const cacheKey = `${CacheKey.CURRENT}${locationKey}`;
 
-        return this.getWithCache<CurrentCondition>(cacheKey, async () => {
+        return this.getWithCache<CurrentCondition | null>(cacheKey, async () => {
             try {
                 const response = await axios.get(
                     `${ACCUWEATHER_BASE_URL}/currentconditions/v1/${locationKey}`,
@@ -112,7 +191,7 @@ export class WeatherService {
                         params: {
                             apikey: this.accuweatherApiKey,
                             details: true,
-                            language: i18n.language, // Add language parameter
+                            language: i18n.language,
                         },
                     },
                 );
@@ -120,18 +199,19 @@ export class WeatherService {
                 if (response.data && response.data.length > 0) {
                     return response.data[0] as CurrentCondition;
                 }
-                throw new Error('Current conditions not found');
+                return null;
             } catch (error) {
                 console.error('Error fetching current conditions:', error);
-                throw error;
+                return null;
             }
         });
     }
 
-    async getDailyForecast(locationKey: string): Promise<DailyForecast[]> {
+    async getDailyForecast(): Promise<DailyForecast[] | null> {
+        const locationKey = await this.getActiveLocationKey();
         const cacheKey = `${CacheKey.DAILY}${locationKey}`;
 
-        return this.getWithCache<DailyForecast[]>(cacheKey, async () => {
+        return this.getWithCache<DailyForecast[] | null>(cacheKey, async () => {
             try {
                 const response = await axios.get(
                     `${ACCUWEATHER_BASE_URL}/forecasts/v1/daily/5day/${locationKey}`,
@@ -139,7 +219,7 @@ export class WeatherService {
                         params: {
                             apikey: this.accuweatherApiKey,
                             metric: true,
-                            language: i18n.language, // Add language parameter
+                            language: i18n.language,
                         },
                     },
                 );
@@ -147,18 +227,19 @@ export class WeatherService {
                 if (response.data && response.data.DailyForecasts) {
                     return response.data.DailyForecasts as DailyForecast[];
                 }
-                throw new Error('Daily forecast not found');
+                return null;
             } catch (error) {
                 console.error('Error fetching daily forecast:', error);
-                throw error;
+                return null;
             }
         });
     }
 
-    async getHourlyForecast(locationKey: string): Promise<HourlyForecast[]> {
+    async getHourlyForecast(): Promise<HourlyForecast[] | null> {
+        const locationKey = await this.getActiveLocationKey();
         const cacheKey = `${CacheKey.HOURLY}${locationKey}`;
 
-        return this.getWithCache<HourlyForecast[]>(cacheKey, async () => {
+        return this.getWithCache<HourlyForecast[] | null>(cacheKey, async () => {
             try {
                 const response = await axios.get(
                     `${ACCUWEATHER_BASE_URL}/forecasts/v1/hourly/12hour/${locationKey}`,
@@ -166,7 +247,7 @@ export class WeatherService {
                         params: {
                             apikey: this.accuweatherApiKey,
                             metric: true,
-                            language: i18n.language, // Add language parameter
+                            language: i18n.language,
                         },
                     },
                 );
@@ -174,19 +255,32 @@ export class WeatherService {
                 if (response.data && response.data.length > 0) {
                     return response.data as HourlyForecast[];
                 }
-                throw new Error('Hourly forecast not found');
+                return null;
             } catch (error) {
                 console.error('Error fetching hourly forecast:', error);
-                throw error;
+                return null;
             }
         });
     }
 
-    // This method fetches air quality data from IQAir API
-    async getAirQuality(locationKey: string) {
-        const cacheKey = `${CacheKey.AIR_QUALITY}${locationKey}`;
+    // This method fetches air quality data from IQAir API using city name instead of location key
+    async getAirQuality(): Promise<AirQualityData | null> {
+        await this.initialize(); // Ensure we have location data
+        const locationData = await this.getLocationData();
 
-        return this.getWithCache(cacheKey, async () => {
+        if (!locationData) {
+            return {
+                value: 0,
+                category: 'Unknown',
+            };
+        }
+
+        const city = locationData.LocalizedName;
+        const country = locationData.Country.LocalizedName;
+
+        const cacheKey = `${CacheKey.AIR_QUALITY}${city}_${country}`;
+
+        return this.getWithCache<AirQualityData | null>(cacheKey, async () => {
             try {
                 // Check if IQAir API key is provided
                 if (!this.iqairApiKey) {
@@ -196,15 +290,11 @@ export class WeatherService {
                     };
                 }
 
-                // We need to get the location first
-                const location = await this.getLocation(locationKey);
-
-                // Use the nearest_city endpoint which is more reliable
+                // Use the nearest_city endpoint with proper city and country parameters
                 const response = await axios.get(AIRQ_BASE_URL + '/v2/nearest_city', {
                     params: {
-                        city: location.LocalizedName,
-                        state: '', // IQAir sometimes requires state, but we can leave it empty
-                        country: location.Country.LocalizedName,
+                        city: city,
+                        country: country,
                         key: this.iqairApiKey,
                     },
                 });
@@ -225,8 +315,6 @@ export class WeatherService {
                 };
             } catch (error) {
                 console.error('Error fetching air quality from IQAir:', error);
-                // Instead of falling back to AccuWeather (which has CORS issues),
-                // return a default value
                 return {
                     value: 0,
                     category: 'Unknown',
@@ -243,31 +331,5 @@ export class WeatherService {
         if (aqi <= 200) return 'Unhealthy';
         if (aqi <= 300) return 'Very Unhealthy';
         return 'Hazardous';
-    }
-
-    async getLocation(locationKey: string): Promise<LocationData> {
-        const cacheKey = `${CacheKey.LOCATION}_details_${locationKey}`;
-
-        return this.getWithCache<LocationData>(cacheKey, async () => {
-            try {
-                const response = await axios.get(
-                    `${ACCUWEATHER_BASE_URL}/locations/v1/${locationKey}`,
-                    {
-                        params: {
-                            apikey: this.accuweatherApiKey,
-                            language: i18n.language, // Add language parameter
-                        },
-                    },
-                );
-
-                if (response.data) {
-                    return response.data as LocationData;
-                }
-                throw new Error('Location details not found');
-            } catch (error) {
-                console.error('Error fetching location details:', error);
-                throw error;
-            }
-        });
     }
 }

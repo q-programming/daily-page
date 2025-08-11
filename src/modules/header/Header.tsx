@@ -3,6 +3,7 @@ import { Box, Typography, IconButton, useTheme } from '@mui/material';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface HeaderProps {
     onToggleTheme?: () => void;
@@ -52,15 +53,17 @@ export const Header = ({ onToggleTheme }: HeaderProps) => {
             <Typography variant='h5' component='h1' fontWeight='bold' data-testid='header-greeting'>
                 {greeting}
             </Typography>
-
-            <IconButton
-                onClick={onToggleTheme}
-                aria-label='toggle theme'
-                color='primary'
-                data-testid='toggle-theme-button'
-            >
-                {isDarkMode ? <DarkModeIcon /> : <LightModeIcon />}
-            </IconButton>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <LanguageSwitcher />
+                <IconButton
+                    onClick={onToggleTheme}
+                    aria-label='toggle theme'
+                    color='primary'
+                    data-testid='toggle-theme-button'
+                >
+                    {isDarkMode ? <DarkModeIcon /> : <LightModeIcon />}
+                </IconButton>
+            </Box>
         </Box>
     );
 };
