@@ -1,55 +1,72 @@
 /**
- * This file maps AccuWeather icon codes to Iconify weather icons
+ * This file maps Open-Meteo weather codes to Iconify weather icons
  */
 import i18n from '../../../i18n/i18n.ts';
-// Map AccuWeather icon codes to Iconify weather icons
-export const getWeatherIcon = (iconCode: number): string => {
-    // The mapping is based on AccuWeather icon codes
-    // https://developer.accuweather.com/weather-icons
-    const iconMap: Record<number, string> = {
-        1: 'wi:day-sunny', // Sunny
-        2: 'wi:day-sunny', // Mostly Sunny
-        3: 'wi:day-cloudy', // Partly Sunny
-        4: 'wi:day-cloudy', // Intermittent Clouds
-        5: 'wi:day-haze', // Hazy Sunshine
-        6: 'wi:day-cloudy', // Mostly Cloudy
-        7: 'wi:cloudy', // Cloudy
-        8: 'wi:cloudy', // Dreary
-        11: 'wi:fog', // Fog
-        12: 'wi:showers', // Showers
-        13: 'wi:day-showers', // Mostly Cloudy w/ Showers
-        14: 'wi:day-showers', // Partly Sunny w/ Showers
-        15: 'wi:thunderstorm', // T-Storms
-        16: 'wi:day-thunderstorm', // Mostly Cloudy w/ T-Storms
-        17: 'wi:day-thunderstorm', // Partly Sunny w/ T-Storms
-        18: 'wi:rain', // Rain
-        19: 'wi:snow', // Flurries
-        20: 'wi:day-snow', // Mostly Cloudy w/ Flurries
-        21: 'wi:day-snow', // Partly Sunny w/ Flurries
-        22: 'wi:snow', // Snow
-        23: 'wi:day-snow', // Mostly Cloudy w/ Snow
-        24: 'wi:snowflake-cold', // Ice
-        25: 'wi:sleet', // Sleet
-        26: 'wi:rain-mix', // Freezing Rain
-        29: 'wi:rain-mix', // Rain and Snow
-        30: 'wi:hot', // Hot
-        31: 'wi:snowflake-cold', // Cold
-        32: 'wi:strong-wind', // Windy
-        33: 'wi:night-clear', // Clear (night)
-        34: 'wi:night-clear', // Mostly Clear (night)
-        35: 'wi:night-alt-cloudy', // Partly Cloudy (night)
-        36: 'wi:night-alt-cloudy', // Intermittent Clouds (night)
-        37: 'wi:night-alt-cloudy', // Hazy (night)
-        38: 'wi:night-alt-cloudy', // Mostly Cloudy (night)
-        39: 'wi:night-alt-showers', // Partly Cloudy w/ Showers (night)
-        40: 'wi:night-alt-showers', // Mostly Cloudy w/ Showers (night)
-        41: 'wi:night-alt-thunderstorm', // Partly Cloudy w/ T-Storms (night)
-        42: 'wi:night-alt-thunderstorm', // Mostly Cloudy w/ T-Storms (night)
-        43: 'wi:night-alt-snow', // Mostly Cloudy w/ Flurries (night)
-        44: 'wi:night-alt-snow', // Mostly Cloudy w/ Snow (night)
+
+/**
+ * Determines if it's currently daytime based on the hour
+ * @param datetime Optional datetime string. If not provided, uses current time
+ * @returns boolean - true if it's daytime, false if it's nighttime
+ */
+export const isDaytime = (datetime?: string): boolean => {
+    const date = datetime ? new Date(datetime) : new Date();
+    const hour = date.getHours();
+
+    // Consider daytime between 6 AM and 8 PM (20:00)
+    return hour >= 6 && hour < 20;
+};
+
+// Map Open-Meteo WMO weather codes to Iconify weather icons
+// Reference: https://open-meteo.com/en/docs/weather-api
+export const getWeatherIcon = (weatherCode: number, datetime?: string): string => {
+    const isDay = isDaytime(datetime);
+
+    // Define both day and night versions of weather icons
+    const iconMap: Record<number, { day: string; night: string }> = {
+        0: { day: 'wi:day-sunny', night: 'wi:night-clear' }, // Clear sky
+        1: { day: 'wi:day-cloudy', night: 'wi:night-alt-cloudy' }, // Mainly clear
+        2: { day: 'wi:cloud', night: 'wi:cloud' }, // Partly cloudy
+        3: { day: 'wi:cloudy', night: 'wi:cloudy' }, // Overcast
+        45: { day: 'wi:fog', night: 'wi:fog' }, // Fog
+        48: { day: 'wi:fog', night: 'wi:fog' }, // Depositing rime fog
+        51: { day: 'wi:day-showers', night: 'wi:night-alt-showers' }, // Light drizzle
+        53: { day: 'wi:showers', night: 'wi:showers' }, // Moderate drizzle
+        55: { day: 'wi:showers', night: 'wi:showers' }, // Dense drizzle
+        56: { day: 'wi:sleet', night: 'wi:sleet' }, // Light freezing drizzle
+        57: { day: 'wi:sleet', night: 'wi:sleet' }, // Dense freezing drizzle
+        61: { day: 'wi:day-rain', night: 'wi:night-alt-rain' }, // Slight rain
+        63: { day: 'wi:rain', night: 'wi:rain' }, // Moderate rain
+        65: { day: 'wi:rain', night: 'wi:rain' }, // Heavy rain
+        66: { day: 'wi:rain-mix', night: 'wi:rain-mix' }, // Light freezing rain
+        67: { day: 'wi:rain-mix', night: 'wi:rain-mix' }, // Heavy freezing rain
+        71: { day: 'wi:day-snow', night: 'wi:night-alt-snow' }, // Slight snow fall
+        73: { day: 'wi:snow', night: 'wi:snow' }, // Moderate snow fall
+        75: { day: 'wi:snow', night: 'wi:snow' }, // Heavy snow fall
+        77: { day: 'wi:snowflake-cold', night: 'wi:snowflake-cold' }, // Snow grains
+        80: { day: 'wi:day-showers', night: 'wi:night-alt-showers' }, // Slight rain showers
+        81: { day: 'wi:showers', night: 'wi:showers' }, // Moderate rain showers
+        82: { day: 'wi:showers', night: 'wi:showers' }, // Violent rain showers
+        85: { day: 'wi:day-snow', night: 'wi:night-alt-snow' }, // Slight snow showers
+        86: { day: 'wi:snow', night: 'wi:snow' }, // Heavy snow showers
+        95: { day: 'wi:day-thunderstorm', night: 'wi:night-alt-thunderstorm' }, // Thunderstorm
+        96: { day: 'wi:day-thunderstorm', night: 'wi:night-alt-thunderstorm' }, // Thunderstorm with slight hail
+        99: { day: 'wi:thunderstorm', night: 'wi:thunderstorm' }, // Thunderstorm with heavy hail
     };
 
-    return iconMap[iconCode] || 'wi:na'; // Return mapped icon or "not available" icon
+    // Return the appropriate icon based on time of day, or "not available" icon if not found
+    if (weatherCode in iconMap) {
+        return isDay ? iconMap[weatherCode].day : iconMap[weatherCode].night;
+    }
+
+    return 'wi:na'; // Return "not available" icon if weather code not found
+};
+
+// Get weather description text from Open-Meteo WMO weather code
+export const getWeatherTextFromCode = (weatherCode: number): string => {
+    // Use i18n to get the translated weather status
+    return i18n.t(`weather.status.${weatherCode}`, {
+        defaultValue: i18n.t('weather.status.unknown'),
+    });
 };
 
 // Format time from API to display time
@@ -77,43 +94,44 @@ export const formatHour = (dateString: string): string => {
     return new Intl.DateTimeFormat(locale, options).format(date);
 };
 
-// Get AQI category text and color based on value
+// Get AQI category text and color based on European AQI value
 export const getAqiInfo = (value: number): { text: string; color: string; i18nKey: string } => {
-    if (value <= 50) {
+    // European Air Quality Index ranges
+    if (value <= 20) {
         return {
             text: 'Good',
-            color: '#00E400',
+            color: '#50F0E6',
             i18nKey: 'weather.airQualityLevels.good',
+        };
+    } else if (value <= 40) {
+        return {
+            text: 'Fair',
+            color: '#50CCAA',
+            i18nKey: 'weather.airQualityLevels.fair',
+        };
+    } else if (value <= 60) {
+        return {
+            text: 'Moderate',
+            color: '#F0E641',
+            i18nKey: 'weather.airQualityLevels.moderate',
+        };
+    } else if (value <= 80) {
+        return {
+            text: 'Poor',
+            color: '#FF5050',
+            i18nKey: 'weather.airQualityLevels.poor',
         };
     } else if (value <= 100) {
         return {
-            text: 'Moderate',
-            color: '#FFFF00',
-            i18nKey: 'weather.airQualityLevels.moderate',
-        };
-    } else if (value <= 150) {
-        return {
-            text: 'Unhealthy for Sensitive Groups',
-            color: '#FF7E00',
-            i18nKey: 'weather.airQualityLevels.unhealthySensitive',
-        };
-    } else if (value <= 200) {
-        return {
-            text: 'Unhealthy',
-            color: '#FF0000',
-            i18nKey: 'weather.airQualityLevels.unhealthy',
-        };
-    } else if (value <= 300) {
-        return {
-            text: 'Very Unhealthy',
-            color: '#99004C',
-            i18nKey: 'weather.airQualityLevels.veryUnhealthy',
+            text: 'Very Poor',
+            color: '#960032',
+            i18nKey: 'weather.airQualityLevels.veryPoor',
         };
     } else {
         return {
-            text: 'Hazardous',
-            color: '#7E0023',
-            i18nKey: 'weather.airQualityLevels.hazardous',
+            text: 'Extremely Poor',
+            color: '#7D2181',
+            i18nKey: 'weather.airQualityLevels.extremelyPoor',
         };
     }
 };

@@ -7,12 +7,19 @@ import type {
     LocationData,
     WeatherSettings,
     AirQualityData,
+    GeocodingResult,
+    OpenMeteoWeatherResponse,
 } from '../types/types.ts';
-import { ACCUWEATHER_BASE_URL, AIRQ_BASE_URL } from '../config';
+import {
+    OPEN_METEO_FORECAST_URL,
+    OPEN_METEO_GEOCODING_URL,
+    OPEN_METEO_AIR_QUALITY_URL,
+} from '../config';
+import { getWeatherTextFromCode } from '../utils/weatherUtils.ts';
 
-const CACHE_DURATION = 60 * 60 * 1000;
+const CACHE_DURATION = 60 * 60 * 1000; // 1 hour cache duration
 
-// Cache keys as constants instead of enum
+// Cache keys as constants
 const CacheKey = {
     LOCATION: 'weather_location_',
     CURRENT: 'weather_current_',
@@ -28,17 +35,16 @@ interface CachedData<T> {
 }
 
 export class WeatherService {
-    private readonly accuweatherApiKey: string;
-    private readonly iqairApiKey: string;
     private readonly city: string;
+    private latitude: number | null = null;
+    private longitude: number | null = null;
     private locationData: LocationData | null = null;
-    private locationKey: string | null = null;
     private initialized = false;
 
     constructor(settings: WeatherSettings) {
-        this.accuweatherApiKey = settings.apiKey;
-        this.iqairApiKey = settings.iqairApiKey;
         this.city = settings.city || '';
+        this.latitude = settings.latitude || null;
+        this.longitude = settings.longitude || null;
     }
 
     // Initialize service and get location data
@@ -48,21 +54,33 @@ export class WeatherService {
         }
 
         try {
-            if (!this.city) {
-                throw new Error('City name is required for initialization');
+            if (!this.city && (!this.latitude || !this.longitude)) {
+                throw new Error(
+                    'Either city name or coordinates (latitude/longitude) are required for initialization',
+                );
             }
 
-            // Fetch location data first
-            const locationKey = await this.getLocationKey(this.city);
+            // If we don't have coordinates yet but have a city name, look up the coordinates
+            if ((!this.latitude || !this.longitude) && this.city) {
+                const geocodingResult = await this.getGeocodingData(this.city);
+                if (!geocodingResult) {
+                    throw new Error(`Geocoding data not found for city: ${this.city}`);
+                }
+                this.latitude = geocodingResult.latitude;
+                this.longitude = geocodingResult.longitude;
 
-            if (!locationKey) {
-                throw new Error(`Location key not found for city: ${this.city}`);
+                // Create location data from geocoding result
+                this.locationData = {
+                    Key: `${geocodingResult.id}`, // Convert to string for compatibility
+                    LocalizedName: geocodingResult.name,
+                    Country: {
+                        LocalizedName: geocodingResult.country,
+                    },
+                    Latitude: geocodingResult.latitude,
+                    Longitude: geocodingResult.longitude,
+                };
             }
 
-            this.locationKey = locationKey;
-
-            // Get and store location details
-            this.locationData = await this.getLocationDetails(this.locationKey);
             this.initialized = true;
         } catch (error) {
             console.error('Error initializing weather service:', error);
@@ -76,14 +94,6 @@ export class WeatherService {
             await this.initialize();
         }
         return this.locationData as LocationData;
-    }
-
-    // Get cached location key or reinitialize if needed
-    private async getActiveLocationKey(): Promise<string> {
-        if (!this.initialized || !this.locationKey) {
-            await this.initialize();
-        }
-        return this.locationKey as string;
     }
 
     // Generic function to get cached data or fetch new data
@@ -122,199 +132,242 @@ export class WeatherService {
         return freshData;
     }
 
-    private async getLocationKey(cityName: string): Promise<string | null> {
+    // Get geocoding data for a city name
+    private async getGeocodingData(cityName: string): Promise<GeocodingResult | null> {
         if (!cityName) {
-            console.warn('City name is empty, cannot fetch location key');
+            console.warn('City name is empty, cannot fetch geocoding data');
             return Promise.resolve(null);
         }
+
         const cacheKey = `${CacheKey.LOCATION}${cityName.toLowerCase()}`;
 
-        return this.getWithCache<string | null>(cacheKey, async () => {
+        return this.getWithCache<GeocodingResult | null>(cacheKey, async () => {
             try {
-                const response = await axios.get(
-                    `${ACCUWEATHER_BASE_URL}/locations/v1/cities/search`,
-                    {
-                        params: {
-                            apikey: this.accuweatherApiKey,
-                            q: cityName,
-                            language: i18n.language, // Add language parameter
-                        },
-                    },
-                );
-
-                if (response.data && response.data.length > 0) {
-                    const location = response.data[0] as LocationData;
-                    return location.Key;
-                }
-                return null;
-            } catch (error) {
-                console.error('Error fetching location key:', error);
-                return null;
-            }
-        });
-    }
-
-    private async getLocationDetails(locationKey: string): Promise<LocationData> {
-        const cacheKey = `${CacheKey.LOCATION}_details_${locationKey}`;
-        return this.getWithCache<LocationData>(cacheKey, async () => {
-            try {
-                const response = await axios.get(
-                    `${ACCUWEATHER_BASE_URL}/locations/v1/${locationKey}`,
-                    {
-                        params: {
-                            apikey: this.accuweatherApiKey,
-                            language: i18n.language,
-                        },
-                    },
-                );
-
-                if (response.data) {
-                    return response.data as LocationData;
-                }
-                throw new Error('Location details not found');
-            } catch (error) {
-                console.error('Error fetching location details:', error);
-                throw error;
-            }
-        });
-    }
-
-    async getCurrentConditions(): Promise<CurrentCondition | null> {
-        const locationKey = await this.getActiveLocationKey();
-        const cacheKey = `${CacheKey.CURRENT}${locationKey}`;
-
-        return this.getWithCache<CurrentCondition | null>(cacheKey, async () => {
-            try {
-                const response = await axios.get(
-                    `${ACCUWEATHER_BASE_URL}/currentconditions/v1/${locationKey}`,
-                    {
-                        params: {
-                            apikey: this.accuweatherApiKey,
-                            details: true,
-                            language: i18n.language,
-                        },
-                    },
-                );
-
-                if (response.data && response.data.length > 0) {
-                    return response.data[0] as CurrentCondition;
-                }
-                return null;
-            } catch (error) {
-                console.error('Error fetching current conditions:', error);
-                return null;
-            }
-        });
-    }
-
-    async getDailyForecast(): Promise<DailyForecast[] | null> {
-        const locationKey = await this.getActiveLocationKey();
-        const cacheKey = `${CacheKey.DAILY}${locationKey}`;
-
-        return this.getWithCache<DailyForecast[] | null>(cacheKey, async () => {
-            try {
-                const response = await axios.get(
-                    `${ACCUWEATHER_BASE_URL}/forecasts/v1/daily/5day/${locationKey}`,
-                    {
-                        params: {
-                            apikey: this.accuweatherApiKey,
-                            metric: true,
-                            language: i18n.language,
-                        },
-                    },
-                );
-
-                if (response.data && response.data.DailyForecasts) {
-                    return response.data.DailyForecasts as DailyForecast[];
-                }
-                return null;
-            } catch (error) {
-                console.error('Error fetching daily forecast:', error);
-                return null;
-            }
-        });
-    }
-
-    async getHourlyForecast(): Promise<HourlyForecast[] | null> {
-        const locationKey = await this.getActiveLocationKey();
-        const cacheKey = `${CacheKey.HOURLY}${locationKey}`;
-
-        return this.getWithCache<HourlyForecast[] | null>(cacheKey, async () => {
-            try {
-                const response = await axios.get(
-                    `${ACCUWEATHER_BASE_URL}/forecasts/v1/hourly/12hour/${locationKey}`,
-                    {
-                        params: {
-                            apikey: this.accuweatherApiKey,
-                            metric: true,
-                            language: i18n.language,
-                        },
-                    },
-                );
-
-                if (response.data && response.data.length > 0) {
-                    return response.data as HourlyForecast[];
-                }
-                return null;
-            } catch (error) {
-                console.error('Error fetching hourly forecast:', error);
-                return null;
-            }
-        });
-    }
-
-    // This method fetches air quality data from IQAir API using city name instead of location key
-    async getAirQuality(): Promise<AirQualityData | null> {
-        await this.initialize(); // Ensure we have location data
-        const locationData = await this.getLocationData();
-
-        if (!locationData) {
-            return {
-                value: 0,
-                category: 'Unknown',
-            };
-        }
-
-        const city = locationData.LocalizedName;
-        const country = locationData.Country.LocalizedName;
-
-        const cacheKey = `${CacheKey.AIR_QUALITY}${city}_${country}`;
-
-        return this.getWithCache<AirQualityData | null>(cacheKey, async () => {
-            try {
-                // Check if IQAir API key is provided
-                if (!this.iqairApiKey) {
-                    return {
-                        value: 0,
-                        category: 'Unknown',
-                    };
-                }
-
-                // Use the nearest_city endpoint with proper city and country parameters
-                const response = await axios.get(AIRQ_BASE_URL + '/v2/nearest_city', {
+                const response = await axios.get(OPEN_METEO_GEOCODING_URL, {
                     params: {
-                        city: city,
-                        country: country,
-                        key: this.iqairApiKey,
+                        name: cityName,
+                        language: i18n.language,
+                        count: 1, // We only need the top match
                     },
                 });
 
-                // Check if the response is valid
-                if (response.data && response.data.status === 'success' && response.data.data) {
-                    const aqiData = response.data.data.current.pollution;
+                if (response.data && response.data.results && response.data.results.length > 0) {
+                    return response.data.results[0] as GeocodingResult;
+                }
+                return null;
+            } catch (error) {
+                console.error('Error fetching geocoding data:', error);
+                return null;
+            }
+        });
+    }
+
+    // Get all weather data (current, hourly, and daily) in one call
+    private async fetchAllWeatherData(): Promise<OpenMeteoWeatherResponse | null> {
+        if (!this.latitude || !this.longitude) {
+            await this.initialize();
+            if (!this.latitude || !this.longitude) {
+                return null;
+            }
+        }
+
+        const cacheKey = `weather_all_${this.latitude}_${this.longitude}`;
+
+        return this.getWithCache<OpenMeteoWeatherResponse | null>(cacheKey, async () => {
+            try {
+                const response = await axios.get(OPEN_METEO_FORECAST_URL, {
+                    params: {
+                        latitude: this.latitude,
+                        longitude: this.longitude,
+                        current: 'temperature_2m,wind_speed_10m,relative_humidity_2m,weather_code',
+                        hourly: 'temperature_2m,wind_speed_10m,relative_humidity_2m,weather_code',
+                        daily: 'weather_code,temperature_2m_max,temperature_2m_min',
+                        forecast_hours: 24,
+                        forecast_days: 1,
+                        timezone: 'auto',
+                    },
+                });
+
+                if (response.data) {
+                    return response.data as OpenMeteoWeatherResponse;
+                }
+                return null;
+            } catch (error) {
+                console.error('Error fetching weather data:', error);
+                return null;
+            }
+        });
+    }
+
+    // Convert Open-Meteo data to the AccuWeather format for compatibility
+    async getCurrentConditions(): Promise<CurrentCondition | null> {
+        const weatherData = await this.fetchAllWeatherData();
+        if (!weatherData || !weatherData.current) {
+            return null;
+        }
+
+        const current = weatherData.current;
+        const weatherCode = current.weather_code || 0;
+
+        return {
+            WeatherText: getWeatherTextFromCode(weatherCode),
+            WeatherIcon: weatherCode,
+            Temperature: {
+                Metric: {
+                    Value: current.temperature_2m,
+                    Unit: '°C',
+                },
+            },
+            Wind: {
+                Speed: {
+                    Metric: {
+                        Value: current.wind_speed_10m,
+                        Unit: 'km/h',
+                    },
+                },
+            },
+            RelativeHumidity: current.relative_humidity_2m,
+            UVIndex: 0, // Open-Meteo doesn't provide UV index in the basic API
+        };
+    }
+
+    async getDailyForecast(): Promise<DailyForecast[] | null> {
+        const weatherData = await this.fetchAllWeatherData();
+        if (!weatherData || !weatherData.daily) {
+            return null;
+        }
+
+        const daily = weatherData.daily;
+        const forecasts: DailyForecast[] = [];
+
+        for (let i = 0; i < daily.time.length; i++) {
+            forecasts.push({
+                Date: daily.time[i],
+                Temperature: {
+                    Minimum: {
+                        Value: daily.temperature_2m_min[i],
+                        Unit: '°C',
+                    },
+                    Maximum: {
+                        Value: daily.temperature_2m_max[i],
+                        Unit: '°C',
+                    },
+                },
+            });
+        }
+
+        return forecasts;
+    }
+
+    async getHourlyForecast(): Promise<HourlyForecast[] | null> {
+        const weatherData = await this.fetchAllWeatherData();
+        if (!weatherData || !weatherData.hourly) {
+            return null;
+        }
+
+        const hourly = weatherData.hourly;
+        const forecasts: HourlyForecast[] = [];
+
+        // We'll use 12 hours
+        const hoursToShow = Math.min(12, hourly.time.length);
+
+        for (let i = 0; i < hoursToShow; i++) {
+            forecasts.push({
+                DateTime: hourly.time[i],
+                WeatherIcon: hourly.weather_code ? hourly.weather_code[i] : 0,
+                Temperature: {
+                    Value: hourly.temperature_2m[i],
+                    Unit: '°C',
+                },
+                IconPhrase: getWeatherTextFromCode(
+                    hourly.weather_code ? hourly.weather_code[i] : 0,
+                ),
+            });
+        }
+
+        return forecasts;
+    }
+
+    // Get air quality data from Open-Meteo
+    async getAirQuality(): Promise<AirQualityData | null> {
+        if (!this.latitude || !this.longitude) {
+            await this.initialize();
+            if (!this.latitude || !this.longitude) {
+                return {
+                    value: 0,
+                    category: 'Unknown',
+                };
+            }
+        }
+
+        const cacheKey = `${CacheKey.AIR_QUALITY}${this.latitude}_${this.longitude}`;
+
+        return this.getWithCache<AirQualityData>(cacheKey, async () => {
+            try {
+                const response = await axios.get(OPEN_METEO_AIR_QUALITY_URL, {
+                    params: {
+                        latitude: this.latitude,
+                        longitude: this.longitude,
+                        current: 'pm2_5,pm10,european_aqi',
+                        hourly: 'pm2_5,pm10,european_aqi',
+                        forecast_hours: 24,
+                        timezone: 'auto',
+                    },
+                });
+
+                if (
+                    response.data &&
+                    response.data.current &&
+                    response.data.current.european_aqi !== undefined
+                ) {
+                    const aqiValue = response.data.current.european_aqi;
+
                     return {
-                        value: aqiData.aqius, // US AQI standard
-                        category: this.getAqiCategory(aqiData.aqius),
+                        value: aqiValue,
+                        category: this.getAqiCategory(aqiValue),
                     };
                 }
 
-                // If no valid data, return unknown
+                // If we don't have European AQI but have PM2.5, estimate AQI
+                if (
+                    response.data &&
+                    response.data.current &&
+                    response.data.current.pm2_5 !== undefined
+                ) {
+                    // Simple estimation of AQI based on PM2.5
+                    const pm25 = response.data.current.pm2_5;
+                    let estimatedAqi = 0;
+
+                    // Crude conversion from PM2.5 to European AQI (approximate)
+                    if (pm25 <= 10) {
+                        estimatedAqi = pm25 * 2; // 0-20 scale
+                    } else if (pm25 <= 20) {
+                        estimatedAqi = 20 + (pm25 - 10) * 2; // 20-40 scale
+                    } else if (pm25 <= 25) {
+                        estimatedAqi = 40 + (pm25 - 20) * 4; // 40-60 scale
+                    } else if (pm25 <= 50) {
+                        estimatedAqi = 60 + (pm25 - 25) * 0.8; // 60-80 scale
+                    } else if (pm25 <= 75) {
+                        estimatedAqi = 80 + (pm25 - 50) * 0.8; // 80-100 scale
+                    } else {
+                        estimatedAqi = 100 + (pm25 - 75) * 0.5; // >100 scale
+                    }
+
+                    return {
+                        value: Math.round(estimatedAqi),
+                        category: this.getAqiCategory(Math.round(estimatedAqi)),
+                    };
+                }
+
+                // Fallback if API fails or changes
+                console.warn('Air quality data unavailable or in unexpected format');
                 return {
                     value: 0,
                     category: 'Unknown',
                 };
             } catch (error) {
-                console.error('Error fetching air quality from IQAir:', error);
+                console.error('Error fetching air quality from Open-Meteo:', error);
+                // We don't want to fail the entire weather display because of air quality issues
                 return {
                     value: 0,
                     category: 'Unknown',
@@ -323,13 +376,13 @@ export class WeatherService {
         });
     }
 
-    // Helper method to get AQI category based on US EPA standard
+    // Helper method to get AQI category based on European AQI standard
     public getAqiCategory(aqi: number): string {
-        if (aqi <= 50) return 'Good';
-        if (aqi <= 100) return 'Moderate';
-        if (aqi <= 150) return 'Unhealthy for Sensitive Groups';
-        if (aqi <= 200) return 'Unhealthy';
-        if (aqi <= 300) return 'Very Unhealthy';
-        return 'Hazardous';
+        if (aqi <= 20) return 'Good';
+        if (aqi <= 40) return 'Fair';
+        if (aqi <= 60) return 'Moderate';
+        if (aqi <= 80) return 'Poor';
+        if (aqi <= 100) return 'Very Poor';
+        return 'Extremely Poor';
     }
 }

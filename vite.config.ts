@@ -1,9 +1,18 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vite.dev/config/
 export default defineConfig({
-    plugins: [react()],
+    base: '/daily',
+    plugins: [
+        react(),
+        VitePWA({
+            registerType: 'autoUpdate',
+            includeAssets: ['favicon.svg', 'icon-192x192.png', 'icon-512x512.png'],
+            manifest: false, // We're using our own manifest file
+        }),
+    ],
     test: {
         fileParallelism: false,
         globals: true,

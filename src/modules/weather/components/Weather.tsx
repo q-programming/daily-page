@@ -7,13 +7,10 @@ import type { WeatherSettings } from '../types/types.ts';
 export const Weather = () => {
     const [settings, setSettings] = useState<WeatherSettings>(() => {
         // Try to load settings from localStorage on component mount
-        // If no settings are found, use default values from evn variables
         const savedSettings = localStorage.getItem('weatherSettings');
         return savedSettings
             ? JSON.parse(savedSettings)
             : {
-                  apiKey: import.meta.env.VITE_ACCUWEATHER_API_KEY,
-                  iqairApiKey: import.meta.env.VITE_IQAIR_API_KEY,
                   city: '',
               };
     });
@@ -26,11 +23,8 @@ export const Weather = () => {
     }, [settings]);
 
     const handleSaveSettings = (newSettings: WeatherSettings) => {
-        // Check if any settings that would require re-initialization have changed
-        const requiresReinit =
-            settings.apiKey !== newSettings.apiKey ||
-            settings.city !== newSettings.city ||
-            settings.iqairApiKey !== newSettings.iqairApiKey;
+        // Check if city has changed
+        const requiresReinit = settings.city !== newSettings.city;
         setSettings(newSettings);
         // If critical settings changed, increment the key to force WeatherCard remount
         if (requiresReinit) {

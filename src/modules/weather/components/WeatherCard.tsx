@@ -43,11 +43,6 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
     // Create and initialize weather service
     useEffect(() => {
         const initWeatherService = async () => {
-            if (!settings.apiKey) {
-                setError('API key is required. Please add it in settings.');
-                setLoading(false);
-                return;
-            }
             if (!settings.city) {
                 setError('City is required. Please add it in settings.');
                 setLoading(false);
@@ -64,7 +59,7 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
             } catch (err) {
                 console.error('Error initializing weather service:', err);
                 setError(
-                    'Failed to initialize weather service. Please check your API key and city.',
+                    'Failed to initialize weather service. Please check your city name and try again.',
                 );
                 setLoading(false);
             }
@@ -107,7 +102,7 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
                 setError(null);
             } catch (err) {
                 console.error('Error fetching weather data:', err);
-                setError('Failed to fetch weather data. Please check your API key and try again.');
+                setError('Failed to fetch weather data. Please try again later.');
             } finally {
                 setLoading(false);
             }
@@ -181,7 +176,6 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
                                 boxShadow: 0,
                             }}
                         >
-                            {/* Use the flat weather icon */}
                             <Icon
                                 icon={getWeatherIcon(currentConditions.WeatherIcon)}
                                 width={64}

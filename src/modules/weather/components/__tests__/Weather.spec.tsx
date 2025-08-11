@@ -11,14 +11,6 @@ vi.mock('../../service/weatherService.ts', () => {
     };
 });
 
-// Mock environment variables
-vi.mock('import.meta', () => ({
-    env: {
-        VITE_ACCUWEATHER_API_KEY: 'mock-accuweather-api-key',
-        VITE_IQAIR_API_KEY: 'mock-iqair-api-key',
-    },
-}));
-
 // Mock localStorage
 const mockLocalStorage = (() => {
     let store: Record<string, string> = {};
@@ -58,8 +50,6 @@ describe('Weather', () => {
 
     it('loads settings from localStorage if available', async () => {
         const testSettings: WeatherSettings = {
-            apiKey: 'test-api-key',
-            iqairApiKey: 'test-iqair-key',
             city: 'Test City',
         };
         // Setup localStorage with test settings
@@ -92,8 +82,6 @@ describe('Weather', () => {
         const settings = JSON.parse(settingsJson);
 
         // Verify the structure without checking exact values
-        expect(settings).toHaveProperty('apiKey');
-        expect(settings).toHaveProperty('iqairApiKey');
         expect(settings).toHaveProperty('city', '');
     });
 
@@ -130,8 +118,6 @@ describe('Weather', () => {
         // Set up mock settings with city to trigger weather data loading
         mockLocalStorage.getItem.mockReturnValueOnce(
             JSON.stringify({
-                apiKey: 'test-api-key',
-                iqairApiKey: 'test-iqair-key',
                 city: 'Test City',
             }),
         );
@@ -142,34 +128,20 @@ describe('Weather', () => {
         expect(getByText(/Loading weather data/i)).toBeInTheDocument();
     });
 
-    it('shows error state in WeatherCard when API key is missing', () => {
-        mockLocalStorage.getItem.mockReturnValueOnce(
-            JSON.stringify({
-                apiKey: '',
-                iqairApiKey: 'test-iqair-key',
-                city: 'Test City',
-            }),
-        );
-        const { getByText } = render(<Weather />);
-        expect(getByText(/API key is required/i)).toBeInTheDocument();
-    });
-
     it('opens settings dialog automatically when no city is provided', () => {
         mockLocalStorage.getItem.mockReturnValueOnce(
             JSON.stringify({
-                apiKey: 'test-api-key',
-                iqairApiKey: 'test-iqair-key',
                 city: '',
             }),
         );
         const { getByTestId } = render(<Weather />);
 
         // Dialog should be open automatically
-        const apiKeyField = getByTestId('weather-settings-api-key');
-        expect(apiKeyField).toBeInTheDocument();
+        const cityField = getByTestId('weather-settings-city');
+        expect(cityField).toBeInTheDocument();
     });
 
-    it('remounts WeatherCard when critical settings change', async () => {
+    it('remounts WeatherCard when city changes', async () => {
         // Access the mocked WeatherService constructor directly from the vi.mocked context
         const weatherServiceConstructor = vi.fn(() => createMockWeatherService());
 
@@ -179,8 +151,6 @@ describe('Weather', () => {
         }));
         // Initial settings with city
         const initialSettings = {
-            apiKey: 'initial-api-key',
-            iqairApiKey: 'initial-iqair-key',
             city: 'Initial City',
         };
         mockLocalStorage.getItem.mockReturnValueOnce(JSON.stringify(initialSettings));
