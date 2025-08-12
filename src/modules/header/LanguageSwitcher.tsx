@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Menu, MenuItem } from '@mui/material';
 import { Language as LanguageIcon } from '@mui/icons-material';
@@ -11,7 +11,6 @@ export const LanguageSwitcher = () => {
     const { i18n } = useTranslation();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
-
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
     };
@@ -27,9 +26,10 @@ export const LanguageSwitcher = () => {
         });
     };
 
-    // Find the current language display name
-    const currentLanguage =
-        supportedLanguages.find((lang) => lang.code === i18n.language)?.name || 'English';
+    const currentLanguage = useMemo(
+        () => supportedLanguages.find((lang) => lang.code === i18n.language)?.name || 'English',
+        [i18n.language],
+    );
 
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>

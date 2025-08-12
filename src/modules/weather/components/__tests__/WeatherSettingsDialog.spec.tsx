@@ -186,13 +186,10 @@ describe('WeatherSettingsDialog', () => {
         const emptySettings: WeatherSettings = {
             city: '',
         };
-
         const { getByTestId } = render(
             <WeatherSettingsDialog settings={emptySettings} onSaveSettings={onSaveSettings} />,
         );
-
         // Dialog should be open automatically, no need to click button
-
         // Save button should exist and be disabled
         const saveButton = getByTestId('weather-settings-save');
         expect(saveButton).toBeInTheDocument();
