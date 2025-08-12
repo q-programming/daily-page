@@ -88,11 +88,8 @@ describe('Weather', () => {
     it('renders WeatherCard with default city when no settings provided', () => {
         // Simulate empty localStorage
         mockLocalStorage.getItem.mockReturnValueOnce(null);
-
         const { getByText } = render(<Weather />);
-
-        // Check if error message for missing city is shown
-        expect(getByText(/City is required/i)).toBeInTheDocument();
+        vi.waitFor(() => expect(getByText(/City is required/i)).toBeInTheDocument());
     });
 
     it('saves settings to localStorage when they change', async () => {

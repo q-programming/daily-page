@@ -44,8 +44,6 @@ export const Header = ({ onToggleTheme }: HeaderProps) => {
                 padding: { xs: 2, sm: 3 },
                 width: '100%',
                 boxSizing: 'border-box',
-                marginTop: 1,
-                // Use theme colors instead of hard-coded values
                 backgroundColor: theme.palette.background.paper,
                 color: theme.palette.text.primary,
             }}

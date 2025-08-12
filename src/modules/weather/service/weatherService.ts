@@ -138,9 +138,7 @@ export class WeatherService {
             console.warn('City name is empty, cannot fetch geocoding data');
             return Promise.resolve(null);
         }
-
         const cacheKey = `${CacheKey.LOCATION}${cityName.toLowerCase()}`;
-
         return this.getWithCache<GeocodingResult | null>(cacheKey, async () => {
             try {
                 const response = await axios.get(OPEN_METEO_GEOCODING_URL, {
@@ -211,7 +209,7 @@ export class WeatherService {
 
         return {
             WeatherText: getWeatherTextFromCode(weatherCode),
-            WeatherIcon: weatherCode,
+            WeatherCode: weatherCode,
             Temperature: {
                 Metric: {
                     Value: current.temperature_2m,

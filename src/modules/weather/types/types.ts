@@ -61,10 +61,9 @@ export interface OpenMeteoAirQuality {
     };
 }
 
-// For compatibility with existing code
 export interface CurrentCondition {
     WeatherText: string;
-    WeatherIcon: number;
+    WeatherCode: number;
     Temperature: {
         Metric: {
             Value: number;

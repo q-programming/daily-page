@@ -19,7 +19,12 @@ import type {
     LocationData,
     AirQualityData,
 } from '../types/types.ts';
-import { getWeatherIcon, formatHour, getAqiInfo } from '../utils/weatherUtils.ts';
+import {
+    getWeatherIcon,
+    formatHour,
+    getAqiInfo,
+    getWeatherTextFromCode,
+} from '../utils/weatherUtils.ts';
 
 interface WeatherCardProps {
     settings: WeatherSettings;
@@ -30,6 +35,7 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
     const { t } = useTranslation();
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [warn, setWarn] = useState<string | null>(null);
     const [currentConditions, setCurrentConditions] = useState<CurrentCondition | null>(null);
     const [hourlyForecast, setHourlyForecast] = useState<HourlyForecast[]>([]);
     const [locationData, setLocationData] = useState<LocationData | null>(null);
@@ -44,11 +50,9 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
     useEffect(() => {
         const initWeatherService = async () => {
             if (!settings.city) {
-                setError('City is required. Please add it in settings.');
-                setLoading(false);
+                setWarn('City is required. Please add it in settings.');
                 return;
             }
-
             try {
                 setLoading(true);
                 // Initialize weather service with current settings
@@ -61,11 +65,10 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
                 setError(
                     'Failed to initialize weather service. Please check your city name and try again.',
                 );
-                setLoading(false);
             }
         };
 
-        initWeatherService().then(() => {
+        initWeatherService().finally(() => {
             setLoading(false);
         });
     }, [settings]);
@@ -73,10 +76,10 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
     // Fetch weather data when weatherService is available
     useEffect(() => {
         const fetchWeatherData = async () => {
-            if (!weatherService) return;
-
+            if (!weatherService) {
+                return;
+            }
             try {
-                setLoading(true);
                 // Fetch all data in parallel
                 const [conditions, hourly, location, airQualityData, dailyForecast] =
                     await Promise.all([
@@ -87,7 +90,8 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
                         weatherService.getDailyForecast(),
                     ]);
                 setCurrentConditions(conditions);
-                setHourlyForecast(hourly?.slice(0, 5) || []); // Get first 5 hours
+                // Take every second hour to show better time distribution (5 entries)
+                setHourlyForecast(hourly?.filter((_, index) => index % 2 === 0).slice(0, 5) || []);
                 setLocationData(location);
                 setAirQuality(airQualityData);
 
@@ -98,18 +102,20 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
                         max: dailyForecast[0].Temperature.Maximum.Value,
                     });
                 }
-
                 setError(null);
+                setWarn(null);
             } catch (err) {
                 console.error('Error fetching weather data:', err);
                 setError('Failed to fetch weather data. Please try again later.');
-            } finally {
-                setLoading(false);
             }
         };
 
-        fetchWeatherData();
+        setLoading(true);
+        fetchWeatherData().finally(() => {
+            setLoading(false);
+        });
     }, [weatherService]);
+
     if (loading) {
         return (
             <Card sx={{ minWidth: 275, textAlign: 'center', p: 2 }}>
@@ -118,6 +124,27 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
                     <Typography variant='body2' mt={2}>
                         {t('weather.loading')}
                     </Typography>
+                </CardContent>
+            </Card>
+        );
+    }
+    if (warn) {
+        return (
+            <Card
+                sx={{
+                    minWidth: 275,
+                    p: 2,
+                    bgcolor:
+                        theme.palette.mode === 'dark'
+                            ? theme.palette.info.dark
+                            : theme.palette.info.light,
+                }}
+            >
+                <CardContent>
+                    <Typography variant='h6' color='info'>
+                        {t('Info')}
+                    </Typography>
+                    <Typography variant='body2'>{warn}</Typography>
                 </CardContent>
             </Card>
         );
@@ -177,13 +204,13 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
                             }}
                         >
                             <Icon
-                                icon={getWeatherIcon(currentConditions.WeatherIcon)}
+                                icon={getWeatherIcon(currentConditions.WeatherCode)}
                                 width={64}
                                 height={64}
                                 color={theme.palette.primary.main}
                             />
                             <Typography variant='h6' sx={{ mt: 1 }}>
-                                {currentConditions.WeatherText}
+                                {getWeatherTextFromCode(currentConditions.WeatherCode)}
                             </Typography>
                             <Typography variant='body2' color='text.secondary'>
                                 {locationData.LocalizedName}, {locationData.Country.LocalizedName}

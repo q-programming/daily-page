@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import {
@@ -15,64 +15,30 @@ import {
     mockOpenMeteoResponse,
 } from './weatherData.ts';
 
-// Import the WeatherService directly - no need to mock it as we're testing it directly
+// Direct import the class we're testing
 import { WeatherService } from '../weatherService.ts';
 
-// Create a mock for localStorage
-class LocalStorageMock {
-    private store: Record<string, string> = {};
-
-    clear() {
-        this.store = {};
-    }
-
-    getItem(key: string) {
-        return this.store[key] || null;
-    }
-
-    setItem(key: string, value: string) {
-        this.store[key] = value;
-    }
-
-    removeItem(key: string) {
-        delete this.store[key];
-    }
-}
-
 describe('WeatherService', () => {
+    // Setup variables
     let mock: MockAdapter;
     let weatherService: WeatherService;
-    let originalLocalStorage: Storage;
-    let mockLocalStorage: LocalStorageMock;
 
     beforeEach(() => {
-        // Set up axios mock
+        // Clear local storage before each test
+        localStorage.clear();
+
+        // Setup axios mock adapter
         mock = new MockAdapter(axios);
 
-        // Save original localStorage
-        originalLocalStorage = window.localStorage;
-
-        // Set up localStorage mock
-        mockLocalStorage = new LocalStorageMock();
-        Object.defineProperty(window, 'localStorage', {
-            value: mockLocalStorage,
-            writable: true,
-        });
-
-        // Create weather service instance with test settings
+        // Create test settings
         const testSettings: WeatherSettings = {
             city: 'Test City',
         };
+
+        // Create instance of WeatherService
         weatherService = new WeatherService(testSettings);
 
-        // Clear localStorage before each test
-        mockLocalStorage.clear();
-
-        // Spy on console methods to prevent test output pollution
-        vi.spyOn(console, 'log').mockImplementation(() => {});
-        vi.spyOn(console, 'error').mockImplementation(() => {});
-
-        // Setup standard mocks for geocoding endpoints
+        // Setup standard geocoding mock response
         mock.onGet(OPEN_METEO_GEOCODING_URL).reply(200, {
             results: [mockGeocodingResult],
         });
@@ -81,21 +47,15 @@ describe('WeatherService', () => {
     afterEach(() => {
         // Reset axios mock
         mock.reset();
-
-        // Restore original localStorage
-        Object.defineProperty(window, 'localStorage', {
-            value: originalLocalStorage,
-            writable: true,
-        });
-
-        vi.restoreAllMocks();
+        mock.restore();
+        // Clear localStorage
+        localStorage.clear();
     });
 
     describe('Initialization', () => {
         it('should successfully initialize service and fetch location data', async () => {
             // Call initialize method
             await weatherService.initialize();
-
             // Verify the APIs were called with expected parameters
             const searchCall = mock.history.get.find(
                 (call) => call.url === OPEN_METEO_GEOCODING_URL,
@@ -105,7 +65,6 @@ describe('WeatherService', () => {
                 language: expect.any(String),
                 count: 1,
             });
-
             // After initialization, location data should be available
             const locationData = await weatherService.getLocationData();
             expect(locationData.LocalizedName).toEqual('Test City');
@@ -295,7 +254,7 @@ describe('WeatherService', () => {
             expect(mock.history.get.length).toBe(1);
 
             // Clear the localStorage
-            mockLocalStorage.clear();
+            localStorage.clear();
             mock.resetHistory();
 
             // Second call - should hit the API again

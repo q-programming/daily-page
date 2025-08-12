@@ -82,6 +82,7 @@ export const WeatherSettingsDialog = ({ settings, onSaveSettings }: WeatherSetti
                         color='primary'
                         variant='contained'
                         disabled={!city.trim()}
+                        data-testid='weather-settings-save'
                     >
                         {t('settings.save')}
                     </Button>

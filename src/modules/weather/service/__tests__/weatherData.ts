@@ -1,19 +1,13 @@
 import type {
     CurrentCondition,
     DailyForecast,
+    GeocodingResult,
     HourlyForecast,
     LocationData,
-    WeatherSettings,
-    GeocodingResult,
-    OpenMeteoWeatherResponse,
     OpenMeteoAirQuality,
+    OpenMeteoWeatherResponse,
 } from '../../types/types.ts';
 import { vi } from 'vitest';
-
-// Mock weather settings - Open-Meteo doesn't require API keys
-export const mockWeatherSettings: WeatherSettings = {
-    city: 'Test City',
-};
 
 // Mock geocoding result from Open-Meteo
 export const mockGeocodingResult: GeocodingResult = {
@@ -97,7 +91,7 @@ export const mockOpenMeteoAirQualityResponse: OpenMeteoAirQuality = {
 // Mock current weather conditions
 export const mockCurrentCondition: CurrentCondition = {
     WeatherText: 'Clear sky',
-    WeatherIcon: 0,
+    WeatherCode: 0,
     Temperature: {
         Metric: {
             Value: 25,
