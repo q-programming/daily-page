@@ -1,139 +1,112 @@
-import ApiCalendar from 'react-google-calendar-api';
-import type { GoogleCalendar, CalendarEvent } from '../types/types';
+import type { CalendarEvent, GoogleCalendar } from '../types/types';
+import { AuthApi, CalendarApi, Configuration } from '@api';
 
-// Define types for the API responses
-interface CalendarListItem {
-    id: string;
-    summary: string;
-    backgroundColor?: string;
-}
-
-interface CalendarEventItem {
-    id: string;
+// Define types for API responses using the models from the API schema
+interface Calendar {
+    id?: string;
     summary?: string;
     description?: string;
-    start: {
+    timeZone?: string;
+    primary?: boolean;
+}
+
+interface CalendarEventResponse {
+    id?: string;
+    summary?: string;
+    description?: string;
+    location?: string;
+    start?: {
         dateTime?: string;
-        date?: string;
+        timeZone?: string;
     };
-    end: {
+    end?: {
         dateTime?: string;
-        date?: string;
+        timeZone?: string;
     };
+    htmlLink?: string;
     colorId?: string;
 }
 
+const configuration = new Configuration({
+    basePath: '/daily/api',
+});
+
+const calendarApi = new CalendarApi(configuration);
+const authApi = new AuthApi(configuration);
+
 export class CalendarService {
-    private apiCalendar: ApiCalendar | null;
-    private initializing = false;
+    private isAuthenticated = false;
 
     constructor() {
-        // Just create the configuration object in constructor
-        // Actual initialization will happen in initialize() method
-        this.apiCalendar = null;
+        this.checkAuthentication();
+    }
+
+    /**
+     * Check if user is authenticated
+     */
+    private async checkAuthentication(): Promise<void> {
+        try {
+            const response = await authApi.getCurrentUser();
+            this.isAuthenticated = response.data.authenticated || false;
+        } catch (error) {
+            console.error('Error checking authentication:', error);
+            this.isAuthenticated = false;
+        }
     }
 
     /**
      * Initialize the calendar service
      */
     public async initialize(): Promise<void> {
-        if (this.apiCalendar) {
-            return;
-        }
-
-        if (this.initializing) {
-            // Wait for initialization to complete
-            await new Promise<void>((resolve) => {
-                const checkInterval = setInterval(() => {
-                    if (this.apiCalendar) {
-                        clearInterval(checkInterval);
-                        resolve();
-                    }
-                }, 100);
-            });
-            return;
-        }
-
-        this.initializing = true;
-
-        try {
-            console.log('Initializing Calendar Service...');
-            // Create a new instance of ApiCalendar with config
-            this.apiCalendar = new ApiCalendar({
-                clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-                apiKey: import.meta.env.VITE_GOOGLE_API_KEY || '',
-                scope: 'https://www.googleapis.com/auth/calendar.readonly',
-                discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
-            });
-            console.log('Calendar service initialized successfully');
-        } catch (error) {
-            console.error('Failed to initialize calendar service:', error);
-            throw error;
-        } finally {
-            this.initializing = false;
-        }
+        await this.checkAuthentication();
     }
 
     /**
      * Check if user is signed in
      */
     public isSignedIn(): boolean {
-        // Only use the ApiCalendar's internal sign state
-        return this.apiCalendar?.sign === true;
+        return this.isAuthenticated;
     }
 
     /**
-     * Sign in with Google
+     * Sign in with Google through the backend OAuth endpoint
      */
     public async signIn(): Promise<void> {
-        if (!this.apiCalendar) {
-            await this.initialize();
-        }
-        if (!this.apiCalendar) {
-            throw new Error('Calendar service is not initialized');
-        }
         try {
-            const result = await this.apiCalendar.handleAuthClick();
-            console.log('Authentication result:', result);
-            // Store authentication state in localStorage
-            localStorage.setItem('googleCalendarSession', 'true');
-            console.log('Authentication successful, sign state:', this.apiCalendar.sign);
+            window.location.href = '/daily/oauth2/authorization/google';
         } catch (error) {
             console.error('Error during sign in:', error);
             throw error;
         }
     }
 
-    public signOut(): void {
-        if (!this.apiCalendar) {
-            return;
-        }
-
+    public async signOut(): Promise<void> {
         try {
-            this.apiCalendar.handleSignoutClick();
-            localStorage.removeItem('googleCalendarSession');
+            await authApi.logoutUser();
+            this.isAuthenticated = false;
+            localStorage.removeItem('calendarSettings');
         } catch (error) {
             console.error('Error during sign out:', error);
+            throw error;
         }
     }
 
     public async fetchCalendarList(): Promise<GoogleCalendar[]> {
-        if (!this.apiCalendar) {
-            await this.initialize();
-        }
-        if (!this.apiCalendar) {
-            throw new Error('Calendar service is not initialized');
-        }
-        if (!this.isSignedIn()) {
-            throw new Error('User is not signed in');
+        if (!this.isAuthenticated) {
+            await this.checkAuthentication();
+            if (!this.isAuthenticated) {
+                throw new Error('User is not signed in');
+            }
         }
 
         try {
-            const response = await this.apiCalendar.listCalendars();
-            return response.result.items.map((calendar: CalendarListItem) => ({
-                id: calendar.id,
-                summary: calendar.summary,
-                backgroundColor: calendar.backgroundColor || '#039be5',
+            const response = await calendarApi.getCalendarList();
+
+            // Transform the backend calendar objects to our frontend model
+            return response.data.map((calendar: Calendar) => ({
+                id: calendar.id || '',
+                summary: calendar.summary || '',
+                backgroundColor: '#039be5', // Default color if not provided
             }));
         } catch (error) {
             console.error('Error fetching calendar list:', error);
@@ -146,21 +119,15 @@ export class CalendarService {
             return [];
         }
 
-        if (!this.apiCalendar) {
-            await this.initialize();
+        if (!this.isAuthenticated) {
+            await this.checkAuthentication();
+            if (!this.isAuthenticated) {
+                console.warn('User is not signed in, cannot fetch events');
+                return [];
+            }
         }
-        if (!this.apiCalendar) {
-            throw new Error('Calendar service is not initialized');
-        }
-        if (!this.isSignedIn()) {
-            console.warn('User is not signed in, cannot fetch events');
-            return [];
-        }
-        try {
-            const timeMin = new Date();
-            const timeMax = new Date();
-            timeMax.setDate(timeMax.getDate() + daysAhead);
 
+        try {
             const allEvents: CalendarEvent[] = [];
 
             // Get the selected calendars from calendarSettings
@@ -197,22 +164,20 @@ export class CalendarService {
                     const calendar = calendarMap.get(calendarId) || defaultCalendarInfo;
 
                     try {
-                        const response = await this.apiCalendar?.listEvents({
-                            calendarId: calendarId,
-                            timeMin: timeMin.toISOString(),
-                            timeMax: timeMax.toISOString(),
-                            showDeleted: false,
-                            singleEvents: true,
-                            orderBy: 'startTime',
-                        });
-
-                        if (response?.result?.items) {
-                            return response.result.items.map((event: CalendarEventItem) => ({
-                                id: event.id,
+                        const response = await calendarApi.getCalendarEvents(calendarId, daysAhead);
+                        if (response.data) {
+                            return response.data.map((event: CalendarEventResponse) => ({
+                                id: event.id || '',
                                 summary: event.summary || '(No title)',
                                 description: event.description,
-                                start: event.start,
-                                end: event.end,
+                                start: {
+                                    dateTime: event.start?.dateTime || '',
+                                    date: undefined, // Backend should provide dateTime
+                                },
+                                end: {
+                                    dateTime: event.end?.dateTime || '',
+                                    date: undefined, // Backend should provide dateTime
+                                },
                                 colorId: event.colorId,
                                 calendarId: calendarId,
                                 calendarSummary: calendar.summary,
@@ -240,12 +205,8 @@ export class CalendarService {
 
             // Sort all events by date
             return allEvents.sort((a, b) => {
-                const dateA = a.start.dateTime
-                    ? new Date(a.start.dateTime)
-                    : new Date(a.start.date || new Date().toISOString());
-                const dateB = b.start.dateTime
-                    ? new Date(b.start.dateTime)
-                    : new Date(b.start.date || new Date().toISOString());
+                const dateA = a.start.dateTime ? new Date(a.start.dateTime) : new Date();
+                const dateB = b.start.dateTime ? new Date(b.start.dateTime) : new Date();
                 return dateA.getTime() - dateB.getTime();
             });
         } catch (error) {

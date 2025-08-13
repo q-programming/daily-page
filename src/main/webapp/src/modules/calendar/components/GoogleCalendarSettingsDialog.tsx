@@ -82,7 +82,9 @@ export const GoogleCalendarSettingsDialog = ({
 
     // Helper function to load calendars with a specific service instance
     const loadCalendarsWithService = async (service: CalendarService) => {
-        if (!service || !service.isSignedIn()) return;
+        if (!service || !service.isSignedIn()) {
+            return;
+        }
 
         try {
             setIsLoading(true);
@@ -107,7 +109,9 @@ export const GoogleCalendarSettingsDialog = ({
     };
 
     const loadCalendars = async () => {
-        if (!calendarService) return;
+        if (!calendarService) {
+            return;
+        }
         return loadCalendarsWithService(calendarService);
     };
 

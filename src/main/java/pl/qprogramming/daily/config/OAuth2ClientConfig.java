@@ -19,6 +19,9 @@ public class OAuth2ClientConfig {
     @Value("${spring.security.oauth2.client.registration.google.client-secret}")
     private String clientSecret;
 
+    @Value("${server.servlet.context-path}")
+    private String contextPath;
+
     @Bean
     public ClientRegistrationRepository clientRegistrationRepository() {
         return new InMemoryClientRegistrationRepository(googleClientRegistration());
@@ -30,6 +33,7 @@ public class OAuth2ClientConfig {
                 .clientSecret(clientSecret)
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                // Don't include /daily in the redirect URI as {baseUrl} already includes the context path
                 .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
                 .scope("openid", "profile", "email", "https://www.googleapis.com/auth/calendar.readonly")
                 .authorizationUri("https://accounts.google.com/o/oauth2/v2/auth")
