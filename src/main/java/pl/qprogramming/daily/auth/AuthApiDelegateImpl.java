@@ -12,6 +12,8 @@ import pl.qprogramming.daily.api.AuthApiDelegate;
 import pl.qprogramming.daily.dto.TokenInfo;
 import pl.qprogramming.daily.dto.UserInfo;
 
+import java.net.URI;
+
 @Service
 @RequiredArgsConstructor
 public class AuthApiDelegateImpl implements AuthApiDelegate {
@@ -68,9 +70,10 @@ public class AuthApiDelegateImpl implements AuthApiDelegate {
 
     @Override
     public ResponseEntity<Void> initiateLogin() {
-        // This endpoint is handled by Spring Security's OAuth2 filter
-        // The delegate method is here just to satisfy the OpenAPI interface
-        return ResponseEntity.ok().build();
+        // Redirect to Spring Security's OAuth2 login endpoint with the context path included
+        return ResponseEntity.status(302)
+                .location(URI.create("/daily/oauth2/authorization/google"))
+                .build();
     }
 
     @Override
