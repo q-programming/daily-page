@@ -1,0 +1,16 @@
+GET http://localhost:8080/daily/api/weather/location?name=Wroc%C5%82aw&language=pl
+
+### Get geolocation by name
+GET http://localhost:8080/daily/api/weather/location?name=Warszawa&language=pl
+
+### Get geolocation by name
+GET {{url}}/api/weather/location?name=Warszawa&language=pl
+Accept: application/json
+
+### Current weather
+GET {{url}}/api/weather/current?51.1&lon=17.03333
+Accept: application/json
+
+### Forecast
+GET {{url}}/api/weather/forecast?lat=51.1&lon=17.03333
+Accept: application/json

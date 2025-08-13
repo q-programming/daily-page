@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: daily
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: 1090724088784-bihlhhtf0b0bb3cg721sp0pmad7doh6v.apps.googleusercontent.com
+            client-secret: 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
+            scope:
+              - openid
+              - profile
+              - email
+              - https://www.googleapis.com/auth/calendar.readonly
+        provider:
+          google:
+            issuer-uri: https://accounts.google.com
+      resourceserver:
+        jwt:
+          issuer-uri: https://accounts.google.com
+logging:
+  level:
+    org:
+      springframework:
+        security: WARN
+server:
+  servlet:
+    context-path: /daily
+  port: 8080
