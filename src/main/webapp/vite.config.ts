@@ -1,6 +1,6 @@
-import {defineConfig} from 'vitest/config';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-import {VitePWA} from 'vite-plugin-pwa';
+import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 // https://vite.dev/config/
@@ -9,22 +9,23 @@ export default defineConfig({
     plugins: [
         react(),
         VitePWA({
-            registerType: 'autoUpdate',
-            includeAssets: ['favicon.svg', 'icon-192x192.png', 'icon-512x512.png'],
-            manifest: false, // We're using our own manifest file
+            strategies: 'injectManifest',
+            srcDir: 'src',
+            filename: 'custom-sw.js',
+            manifest: false, // Do not generate a manifest
         }),
     ],
     resolve: {
         alias: {
             '@api': path.resolve(__dirname, './src/api.ts'),
             '@api/*': path.resolve(__dirname, './client-api'),
-        }
+        },
     },
     build: {
         commonjsOptions: {
             transformMixedEsModules: true, // Enable mixed module transformation
-            include: [/client-api/, /node_modules/]
-        }
+            include: [/client-api/, /node_modules/],
+        },
     },
     server: {
         proxy: {

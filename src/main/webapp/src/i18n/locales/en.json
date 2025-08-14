@@ -72,7 +72,8 @@
     "connectPrompt": "Connect your Google Calendar to see your upcoming events.",
     "noEvents": "No upcoming events.",
     "errors": {
-      "fetchFailed": "Failed to load calendar events. Please try again."
+      "fetchFailed": "Failed to load calendar events. Please try again.",
+      "notSignedIn": "Not signed in into Google , please sign in"
     },
     "dates": {
       "today": "Today",

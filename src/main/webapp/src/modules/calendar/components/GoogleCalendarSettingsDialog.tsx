@@ -22,57 +22,37 @@ import {
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useTranslation } from 'react-i18next';
 import { CalendarService } from '../service/calendarService';
-import type { CalendarSettings, GoogleCalendar } from '../types/types';
+import type { CalendarSettings } from '../types/types';
+import type { Calendar } from '@api/api.ts';
 
 interface GoogleCalendarSettingsDialogProps {
     settings: CalendarSettings;
     onSaveSettings: (settings: CalendarSettings) => void;
+    calendarService: CalendarService | null;
 }
 
 export const GoogleCalendarSettingsDialog = ({
     settings,
     onSaveSettings,
+    calendarService,
 }: GoogleCalendarSettingsDialogProps) => {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [calendars, setCalendars] = useState<GoogleCalendar[]>([]);
-    const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>(
-        settings.selectedCalendarIds || [],
+    const [calendars, setCalendars] = useState<Calendar[]>([]);
+    const [selectedCalendars, setSelectedCalendars] = useState<Calendar[]>(
+        settings.selectedCalendars || [],
     );
     const [daysAhead, setDaysAhead] = useState<number>(settings.daysAhead || 7);
     const [error, setError] = useState<string | null>(null);
-    const [calendarService, setCalendarService] = useState<CalendarService | null>(null);
 
     const handleOpen = async () => {
         setOpen(true);
-        setIsLoading(true);
         // Reset selections to current settings
-        setSelectedCalendarIds(settings.selectedCalendarIds || []);
+        setSelectedCalendars(settings.selectedCalendars || []);
         setDaysAhead(settings.daysAhead || 7);
-        // Initialize the service only when the dialog is opened
-        if (!calendarService) {
-            try {
-                const service = new CalendarService();
-                await service.initialize();
-                setCalendarService(service);
-
-                // If we're connected and have a working service, load calendars
-                if (settings.isConnected && service.isSignedIn()) {
-                    await loadCalendarsWithService(service);
-                }
-            } catch (err) {
-                console.error('Error initializing calendar service:', err);
-                setError('Failed to initialize calendar service');
-            } finally {
-                setIsLoading(false);
-            }
-        } else {
-            // If service exists and we're connected, load calendars
-            if (settings.isConnected && calendarService.isSignedIn()) {
-                await loadCalendars();
-            }
-            setIsLoading(false);
+        if (settings.isConnected && calendarService?.isSignedIn()) {
+            await loadCalendars();
         }
     };
 
@@ -80,60 +60,19 @@ export const GoogleCalendarSettingsDialog = ({
         setOpen(false);
     };
 
-    // Helper function to load calendars with a specific service instance
-    const loadCalendarsWithService = async (service: CalendarService) => {
-        if (!service || !service.isSignedIn()) {
+    const loadCalendars = async () => {
+        if (!calendarService || !calendarService.isSignedIn()) {
             return;
         }
 
         try {
             setIsLoading(true);
             setError(null);
-            const calendarList = await service.fetchCalendarList();
+            const calendarList = await calendarService.fetchCalendarList();
             setCalendars(calendarList);
-
-            // Store the calendars in settings for later use
-            localStorage.setItem(
-                'calendarSettings',
-                JSON.stringify({
-                    ...settings,
-                    selectedCalendars: calendarList,
-                }),
-            );
         } catch (error) {
             console.error('Error loading calendars:', error);
             setError('Failed to load calendars. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const loadCalendars = async () => {
-        if (!calendarService) {
-            return;
-        }
-        return loadCalendarsWithService(calendarService);
-    };
-
-    const handleSignIn = async () => {
-        if (!calendarService) return;
-
-        try {
-            setIsLoading(true);
-            setError(null);
-            await calendarService.signIn();
-            await loadCalendars();
-
-            // After successful sign in, update the settings
-            onSaveSettings({
-                ...settings,
-                isConnected: true,
-                selectedCalendarIds: selectedCalendarIds,
-                daysAhead: daysAhead,
-            });
-        } catch (error) {
-            console.error('Error signing in:', error);
-            setError('Failed to sign in with Google. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -146,24 +85,25 @@ export const GoogleCalendarSettingsDialog = ({
         onSaveSettings({
             ...settings,
             isConnected: false,
-            selectedCalendarIds: [],
+            selectedCalendars: [],
         });
         setCalendars([]);
     };
 
     // Load calendars when dialog opens and service is ready
     useEffect(() => {
-        if (open && calendarService && settings.isConnected) {
+        if (open && calendarService && calendarService.isSignedIn()) {
             loadCalendars();
         }
     }, [open, calendarService]);
 
-    const handleCalendarToggle = (calendarId: string) => {
-        setSelectedCalendarIds((prevSelected) => {
-            if (prevSelected.includes(calendarId)) {
-                return prevSelected.filter((id) => id !== calendarId);
+    const handleCalendarToggle = (calendar: Calendar) => {
+        setSelectedCalendars((prevSelected) => {
+            const isSelected = prevSelected.some((c) => c.id === calendar.id);
+            if (isSelected) {
+                return prevSelected.filter((c) => c.id !== calendar.id);
             } else {
-                return [...prevSelected, calendarId];
+                return [...prevSelected, calendar];
             }
         });
     };
@@ -172,7 +112,7 @@ export const GoogleCalendarSettingsDialog = ({
         onSaveSettings({
             ...settings,
             isConnected: calendarService?.isSignedIn() || false,
-            selectedCalendarIds: selectedCalendarIds,
+            selectedCalendars: selectedCalendars,
             daysAhead: daysAhead,
         });
         handleClose();
@@ -185,6 +125,7 @@ export const GoogleCalendarSettingsDialog = ({
                 size='small'
                 aria-label='calendar settings'
                 data-testid='calendar-settings-button'
+                disabled={!settings.isConnected || !calendarService?.isSignedIn()}
             >
                 <SettingsIcon fontSize='small' />
             </IconButton>
@@ -209,19 +150,11 @@ export const GoogleCalendarSettingsDialog = ({
                         <Box display='flex' justifyContent='center' my={3}>
                             <CircularProgress />
                         </Box>
-                    ) : !settings.isConnected ? (
+                    ) : !calendarService?.isSignedIn() ? (
                         <Box textAlign='center' my={3}>
                             <Typography variant='body1' gutterBottom>
-                                {t('calendar.settings.connectPrompt')}
+                                {t('calendar.settings.notConnected')}
                             </Typography>
-                            <Button
-                                variant='contained'
-                                color='primary'
-                                onClick={handleSignIn}
-                                sx={{ mt: 2 }}
-                            >
-                                {t('calendar.settings.signInWithGoogle')}
-                            </Button>
                         </Box>
                     ) : (
                         <>
@@ -257,21 +190,23 @@ export const GoogleCalendarSettingsDialog = ({
                                     <ListItem
                                         key={calendar.id}
                                         dense
-                                        onClick={() => handleCalendarToggle(calendar.id)}
+                                        onClick={() => handleCalendarToggle(calendar)}
                                     >
                                         <Checkbox
                                             edge='start'
-                                            checked={selectedCalendarIds.includes(calendar.id)}
+                                            checked={selectedCalendars.some(
+                                                (c) => c.id === calendar.id,
+                                            )}
                                             tabIndex={-1}
                                             disableRipple
-                                            style={{ color: calendar.backgroundColor }}
+                                            style={{ color: calendar.color || '#039be5' }}
                                         />
                                         <ListItemText primary={calendar.summary} />
                                         <Box
                                             sx={{
                                                 width: 16,
                                                 height: 16,
-                                                backgroundColor: calendar.backgroundColor,
+                                                backgroundColor: calendar.color || '#039be5',
                                                 borderRadius: '50%',
                                             }}
                                         />
@@ -295,11 +230,9 @@ export const GoogleCalendarSettingsDialog = ({
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleClose}>{t('common.cancel')}</Button>
-                    {settings.isConnected && (
-                        <Button onClick={handleSaveSettings} color='primary'>
-                            {t('common.save')}
-                        </Button>
-                    )}
+                    <Button onClick={handleSaveSettings} color='primary'>
+                        {t('common.save')}
+                    </Button>
                 </DialogActions>
             </Dialog>
         </>

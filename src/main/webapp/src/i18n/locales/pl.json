@@ -72,7 +72,8 @@
     "connectPrompt": "Połącz swój Kalendarz Google, aby zobaczyć nadchodzące wydarzenia.",
     "noEvents": "Brak nadchodzących wydarzeń.",
     "errors": {
-      "fetchFailed": "Nie udało się załadować wydarzeń z kalendarza. Spróbuj ponownie."
+      "fetchFailed": "Nie udało się załadować wydarzeń z kalendarza. Spróbuj ponownie.",
+      "notSignedIn": "Nie jesteś zalogowany do Google, zaloguj się, aby kontynuować."
     },
     "dates": {
       "today": "Dziś",

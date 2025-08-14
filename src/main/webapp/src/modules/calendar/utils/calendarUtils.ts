@@ -1,30 +1,42 @@
-import type { CalendarEvent, GroupedEvents } from '../types/types';
+import type { GroupedEvents } from '../types/types';
 import i18next from 'i18next';
+import type { CalendarEvent } from '@api';
 
 /**
  * Groups events by date
  */
 export function groupEventsByDate(events: CalendarEvent[]): GroupedEvents {
     const groupedEvents: GroupedEvents = {};
-
     events.forEach((event) => {
-        let startDate;
-        if (event.start.dateTime) {
-            // Time-specific event
-            startDate = new Date(event.start.dateTime).toLocaleDateString();
-        } else if (event.start.date) {
-            // All-day event
-            startDate = new Date(event.start.date).toLocaleDateString();
-        } else {
-            // Fallback if neither is available
-            startDate = new Date().toLocaleDateString();
+        let startDate: Date | null = null;
+        let endDate: Date | null = null;
+        // Determine start date
+        if (event.start?.date) {
+            // All-day event: 'YYYY-MM-DD'
+            const dateParts = event.start.date.split('-').map(Number);
+            startDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+        } else if (event.start?.dateTime) {
+            // Timed event
+            startDate = new Date(event.start.dateTime);
         }
-
-        if (!groupedEvents[startDate]) {
-            groupedEvents[startDate] = [];
+        // Determine end date
+        if (event.end?.date) {
+            const dateParts = event.end.date.split('-').map(Number);
+            // For all-day events, the end date is exclusive. We subtract one day to make it inclusive.
+            endDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2] - 1);
+        } else if (event.end?.dateTime) {
+            endDate = new Date(event.end.dateTime);
         }
-
-        groupedEvents[startDate].push(event);
+        if (startDate) {
+            const loopEndDate = endDate && endDate > startDate ? endDate : startDate;
+            for (let d = new Date(startDate); d <= loopEndDate; d.setDate(d.getDate() + 1)) {
+                const dateKey = d.toLocaleDateString();
+                if (!groupedEvents[dateKey]) {
+                    groupedEvents[dateKey] = [];
+                }
+                groupedEvents[dateKey].push(event);
+            }
+        }
     });
 
     return groupedEvents;
@@ -33,27 +45,47 @@ export function groupEventsByDate(events: CalendarEvent[]): GroupedEvents {
 /**
  * Formats event time for display
  */
-export function formatEventTime(event: CalendarEvent): string {
-    // All-day event
-    if (event.start.date) {
+export function formatEventTime(event: CalendarEvent, dateKey: string): string {
+    const displayDate = new Date(dateKey);
+    displayDate.setHours(0, 0, 0, 0);
+
+    // All-day event (no specific time)
+    if (!event.start?.dateTime || !event.end?.dateTime) {
         return i18next.t('calendar.dates.allDay');
     }
 
-    // Time-specific event
     const startDate = new Date(event.start.dateTime);
     const endDate = new Date(event.end.dateTime);
 
-    // Use the current language for time formatting
-    const startTime = startDate.toLocaleTimeString(i18next.language, {
-        hour: '2-digit',
-        minute: '2-digit',
-    });
-    const endTime = endDate.toLocaleTimeString(i18next.language, {
-        hour: '2-digit',
-        minute: '2-digit',
-    });
+    const eventStartDate = new Date(startDate);
+    eventStartDate.setHours(0, 0, 0, 0);
 
-    return `${startTime} - ${endTime}`;
+    const eventEndDate = new Date(endDate);
+    eventEndDate.setHours(0, 0, 0, 0);
+
+    const timeOptions: Intl.DateTimeFormatOptions = {
+        hour: '2-digit',
+        minute: '2-digit',
+    };
+    const startTime = startDate.toLocaleTimeString(i18next.language, timeOptions);
+    const endTime = endDate.toLocaleTimeString(i18next.language, timeOptions);
+
+    const isStartOnDisplayDate = eventStartDate.getTime() === displayDate.getTime();
+    const isEndOnDisplayDate = eventEndDate.getTime() === displayDate.getTime();
+
+    if (isStartOnDisplayDate && isEndOnDisplayDate) {
+        // Event starts and ends on the same day
+        return `${startTime} - ${endTime}`;
+    } else if (isStartOnDisplayDate) {
+        // Event starts on this day and ends on another
+        return `${startTime} -> `;
+    } else if (isEndOnDisplayDate) {
+        // Event ends on this day
+        return `-> ${endTime}`;
+    } else {
+        // Event spans the whole day (started before, ends after)
+        return i18next.t('calendar.dates.allDay');
+    }
 }
 
 /**
@@ -80,12 +112,12 @@ export function formatDate(dateString: string): string {
         return i18next.t('calendar.dates.tomorrow');
     } else {
         // Format: Monday, Aug 12
-        const formattedDate = date.toLocaleDateString(i18next.language, {
-            weekday: 'long',
+
+        return date.toLocaleDateString(i18next.language, {
+            weekday: 'short',
             month: 'short',
             day: 'numeric',
         });
-        return formattedDate;
     }
 }
 

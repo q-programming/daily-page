@@ -3,6 +3,7 @@ package pl.qprogramming.daily.api;
 import com.google.api.services.calendar.model.CalendarListEntry;
 import com.google.api.services.calendar.model.Event;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class CalendarApiDelegateImpl implements CalendarApiDelegate {
 
@@ -38,6 +40,9 @@ public class CalendarApiDelegateImpl implements CalendarApiDelegate {
             String accessToken = authorizedClient.getAccessToken().getTokenValue();
             List<CalendarListEntry> googleCalendars = calendarService.getCalendarList(accessToken);
             List<Calendar> calendars = googleCalendars.stream()
+                    .peek(entry -> {
+                       log.debug("Calendar entry: {}", entry);
+                    })
                     .map(calendarMapper::toDto)
                     .collect(Collectors.toList());
             return ResponseEntity.ok(calendars);
@@ -60,6 +65,9 @@ public class CalendarApiDelegateImpl implements CalendarApiDelegate {
 
             List<Event> googleEvents = calendarService.getCalendarEvents(accessToken, calId, daysCount);
             List<CalendarEvent> events = googleEvents.stream()
+                    .peek(event -> {
+                        log.debug("Calendar event: {}", event);
+                    })
                     .map(calendarMapper::toDto)
                     .collect(Collectors.toList());
             return ResponseEntity.ok(events);

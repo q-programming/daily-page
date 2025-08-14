@@ -1,6 +1,7 @@
 package pl.qprogramming.daily.auth;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
@@ -12,8 +13,7 @@ import pl.qprogramming.daily.api.AuthApiDelegate;
 import pl.qprogramming.daily.dto.TokenInfo;
 import pl.qprogramming.daily.dto.UserInfo;
 
-import java.net.URI;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthApiDelegateImpl implements AuthApiDelegate {
@@ -27,12 +27,13 @@ public class AuthApiDelegateImpl implements AuthApiDelegate {
         // Get the authenticated user from the security context
         OAuth2User principal = null;
         if (SecurityContextHolder.getContext().getAuthentication() != null &&
-            SecurityContextHolder.getContext().getAuthentication().getPrincipal() instanceof OAuth2User) {
+                SecurityContextHolder.getContext().getAuthentication().getPrincipal() instanceof OAuth2User) {
             principal = (OAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         }
 
         if (principal == null) {
             userInfo.setAuthenticated(false);
+            log.debug("User not logged in");
             return ResponseEntity.ok(userInfo);
         }
 
@@ -40,7 +41,7 @@ public class AuthApiDelegateImpl implements AuthApiDelegate {
         userInfo.setName(principal.getAttribute("name"));
         userInfo.setEmail(principal.getAttribute("email"));
         userInfo.setPicture(principal.getAttribute("picture"));
-
+        log.debug("User info retrieved: {}", userInfo);
         return ResponseEntity.ok(userInfo);
     }
 
@@ -68,18 +69,18 @@ public class AuthApiDelegateImpl implements AuthApiDelegate {
         return ResponseEntity.ok(tokenInfo);
     }
 
-    @Override
-    public ResponseEntity<Void> initiateLogin() {
-        // Redirect to Spring Security's OAuth2 login endpoint with the context path included
-        return ResponseEntity.status(302)
-                .location(URI.create("/daily/oauth2/authorization/google"))
-                .build();
-    }
-
-    @Override
-    public ResponseEntity<Void> logoutUser() {
-        // This endpoint is handled by Spring Security's logout handler
-        // The delegate method is here just to satisfy the OpenAPI interface
-        return ResponseEntity.ok().build();
-    }
+//    @Override
+//    public ResponseEntity<Void> initiateLogin() {
+//        // Redirect to Spring Security's OAuth2 login endpoint with the context path included
+//        return ResponseEntity.status(302)
+//                .location(URI.create("/daily/oauth2/authorization/google"))
+//                .build();
+//    }
+//
+//    @Override
+//    public ResponseEntity<Void> logoutUser() {
+//        // This endpoint is handled by Spring Security's logout handler
+//        // The delegate method is here just to satisfy the OpenAPI interface
+//        return ResponseEntity.ok().build();
+//    }
 }
