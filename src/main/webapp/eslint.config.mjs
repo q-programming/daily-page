@@ -22,6 +22,7 @@ export default [
             'eslint.config.mjs',
             'vite.config.ts',
             'server.js',
+            'src/custom-sw.js',
         ],
     },
     ...compat.extends(

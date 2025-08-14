@@ -161,16 +161,6 @@ paths:
         500:
           description: Server error
 
-  /auth/login:
-    get:
-      tags:
-        - auth
-      description: Initiate OAuth2 login with Google
-      operationId: initiateLogin
-      responses:
-        302:
-          description: Redirect to Google login page
-
   /auth/user:
     get:
       tags:
@@ -204,18 +194,6 @@ paths:
                 $ref: '#/components/schemas/TokenInfo'
         401:
           description: Unauthorized - not authenticated
-        500:
-          description: Server error
-
-  /auth/logout:
-    post:
-      tags:
-        - auth
-      description: Logout the current user
-      operationId: logoutUser
-      responses:
-        200:
-          description: Successfully logged out
         500:
           description: Server error
 
@@ -397,6 +375,9 @@ components:
 
     Calendar:
       type: object
+      required:
+        - id
+        - summary
       properties:
         id:
           type: string
@@ -408,6 +389,8 @@ components:
           type: string
         primary:
           type: boolean
+        color:
+          type: string
 
     CalendarEvent:
       type: object
@@ -423,6 +406,9 @@ components:
         start:
           type: object
           properties:
+            date:
+              type: string
+              format: date
             dateTime:
               type: string
               format: date-time
@@ -431,6 +417,9 @@ components:
         end:
           type: object
           properties:
+            date:
+              type: string
+              format: date
             dateTime:
               type: string
               format: date-time
@@ -438,7 +427,7 @@ components:
               type: string
         htmlLink:
           type: string
-        colorId:
+        calendarColor:
           type: string
 
     AirQualityData:
