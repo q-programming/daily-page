@@ -68,19 +68,4 @@ public class AuthApiDelegateImpl implements AuthApiDelegate {
 
         return ResponseEntity.ok(tokenInfo);
     }
-
-//    @Override
-//    public ResponseEntity<Void> initiateLogin() {
-//        // Redirect to Spring Security's OAuth2 login endpoint with the context path included
-//        return ResponseEntity.status(302)
-//                .location(URI.create("/daily/oauth2/authorization/google"))
-//                .build();
-//    }
-//
-//    @Override
-//    public ResponseEntity<Void> logoutUser() {
-//        // This endpoint is handled by Spring Security's logout handler
-//        // The delegate method is here just to satisfy the OpenAPI interface
-//        return ResponseEntity.ok().build();
-//    }
 }
