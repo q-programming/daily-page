@@ -14,6 +14,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 import pl.qprogramming.daily.service.AuthorizedClientsService;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
 @Configuration
@@ -80,21 +82,36 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Custom OAuth2AuthorizationRequestResolver to add additional parameters
+     * to the authorization request, such as access_type and prompt.
+     * This is necessary to ensure that the refresh token is always provided
+     *
+     * @param clientRegistrationRepository client registration repository
+     * @return OAuth2AuthorizationRequestResolver
+     */
     private OAuth2AuthorizationRequestResolver authorizationRequestResolver(
             ClientRegistrationRepository clientRegistrationRepository) {
-
         DefaultOAuth2AuthorizationRequestResolver authorizationRequestResolver =
                 new DefaultOAuth2AuthorizationRequestResolver(
                         clientRegistrationRepository, "/oauth2/authorization");
-
         authorizationRequestResolver.setAuthorizationRequestCustomizer(
                 authorizationRequestCustomizer());
-
         return authorizationRequestResolver;
     }
 
+    /**
+     * Customizer for OAuth2AuthorizationRequest to add additional parameters
+     *
+     * @return Consumer<OAuth2AuthorizationRequest.Builder>
+     */
     private Consumer<OAuth2AuthorizationRequest.Builder> authorizationRequestCustomizer() {
-        return customizer -> customizer
-                .additionalParameters(params -> params.put("access_type", "offline"));
+        return customizer -> {
+            Map<String, Object> additionalParams = new HashMap<>();
+            additionalParams.put("access_type", "offline");
+            // Force approval prompt to ensure refresh token is always provided
+            additionalParams.put("prompt", "consent");
+            customizer.additionalParameters(params -> params.putAll(additionalParams));
+        };
     }
 }
