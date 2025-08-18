@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: Daily App
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: <CLIENT_ID>
+            client-secret: <CLIENT_SECRET>
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - openid
+              - profile
+              - email
+              - https://www.googleapis.com/auth/calendar.readonly
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://www.googleapis.com/oauth2/v4/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
+            user-name-attribute: sub
+logging:
+  level:
+    org:
+      springframework:
+        security: WARN
+server:
+  servlet:
+    context-path: /daily
+  port: 8080

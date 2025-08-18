@@ -13,7 +13,7 @@ A React + TypeScript application that provides a personalized daily dashboard. T
 - Responsive UI for desktop and mobile.
 
 ## Getting Started
-
+### Frontend
 1. **Install dependencies**:
    ```bash
    npm install
@@ -27,13 +27,13 @@ A React + TypeScript application that provides a personalized daily dashboard. T
    npm run build
    ```
 
-## Project Structure
+### Project Structure
 
-- `src/modules/weather` – Weather and air quality components/services
-- `src/modules/header` – App header
-- `src/i18n` – Localization files
-- `src/theme` – Theme configuration
-## Development
+- `src/main/webapp/modules/weather` – Weather and air quality components/services
+- `src/main/webapp/src/modules/header` – App header
+- `src/main/webapp/src/i18n` – Localization files
+- `src/main/webapp/src/theme` – Theme configuration
+### Development
 
 ### Debugging
 To debug in InteliJ 
@@ -49,7 +49,7 @@ Intelij can stop in random place but then it should stop at your breakpoints
 This setting can be added as Edit configuration template , but be mindful that when using it, regardless if Run or Debug , tests will always pause at test execution and wait for debugger !
 If you want to run test normally without debugger , you can remove this configuration and run normally
 
-## Technologies Used
+### Technologies Used
 
 - React
 - TypeScript

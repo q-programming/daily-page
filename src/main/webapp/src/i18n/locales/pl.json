@@ -1,0 +1,98 @@
+{
+  "header": {
+    "morning": "Dzień Dobry",
+    "afternoon": "Dzień Dobry",
+    "evening": "Dobry Wieczór",
+    "night": "Dobranoc"
+  },
+  "weather": {
+    "title": "Następne Godziny",
+    "windSpeed": "Prędkość Wiatru",
+    "airQuality": "Jakość Powietrza",
+    "error": "Błąd",
+    "cityRequired": "Miasto jest wymagane. Proszę dodać je w ustawieniach.",
+    "fetchError": "Nie udało się pobrać danych pogodowych. Spróbuj ponownie póżniej.",
+    "errorInit": "Nie udało się zainicjalizować usługi pogodowej. Sprawdź nazwę miasta i spróbuj ponownie.",
+    "noData": "Brak dostępnych danych pogodowych.",
+    "loading": "Ładowanie danych pogodowych...",
+    "min": "Min",
+    "max": "Max",
+    "airQualityLevels": {
+      "good": "Dobra",
+      "fair": "Dość Dobra",
+      "moderate": "Umiarkowana",
+      "poor": "Słaba",
+      "veryPoor": "Bardzo Słaba",
+      "extremelyPoor": "Skrajnie Słaba",
+      "unknown": "Nieznana"
+    },
+    "status": {
+      "0": "Bezchmurnie",
+      "1": "Przeważnie bezchmurnie",
+      "2": "Częściowo zachmurzone",
+      "3": "Pochmurno",
+      "45": "Mgła",
+      "48": "Szadź",
+      "51": "Lekka mżawka",
+      "53": "Umiarkowana mżawka",
+      "55": "Gęsta mżawka",
+      "56": "Lekka marznąca mżawka",
+      "57": "Gęsta marznąca mżawka",
+      "61": "Lekki deszcz",
+      "63": "Umiarkowany deszcz",
+      "65": "Silny deszcz",
+      "66": "Lekki marznący deszcz",
+      "67": "Silny marznący deszcz",
+      "71": "Lekkie opady śniegu",
+      "73": "Umiarkowane opady śniegu",
+      "75": "Silne opady śniegu",
+      "77": "Ziarna śniegu",
+      "80": "Lekkie przelotne opady deszczu",
+      "81": "Umiarkowane przelotne opady deszczu",
+      "82": "Gwałtowne przelotne opady deszczu",
+      "85": "Lekkie przelotne opady śniegu",
+      "86": "Silne przelotne opady śniegu",
+      "95": "Burza",
+      "96": "Burza z drobnym gradem",
+      "99": "Burza z silnym gradem",
+      "unknown": "Nieznany"
+    }
+  },
+  "settings": {
+    "title": "Ustawienia Pogody",
+    "cityLabel": "Twoje Miasto",
+    "cityDescription": "Ustaw swoje miasto dla danych pogodowych.",
+    "cityPlaceholder": "np., Warszawa",
+    "cityHelp": "Opcjonalnie: Pozostaw puste, aby użyć lokalizacji urządzenia",
+    "cancel": "Anuluj",
+    "save": "Zapisz"
+  },
+  "calendar": {
+    "title": "Kalendarz",
+    "connectPrompt": "Połącz swój Kalendarz Google, aby zobaczyć nadchodzące wydarzenia.",
+    "noEvents": "Brak nadchodzących wydarzeń.",
+    "errors": {
+      "fetchFailed": "Nie udało się załadować wydarzeń z kalendarza. Spróbuj ponownie.",
+      "notSignedIn": "Nie jesteś zalogowany do Google, zaloguj się, aby kontynuować."
+    },
+    "dates": {
+      "today": "Dziś",
+      "tomorrow": "Jutro",
+      "allDay": "Cały dzień"
+    },
+    "settings": {
+      "title": "Ustawienia Kalendarza",
+      "connectPrompt": "Połącz swój Kalendarz Google, aby zobaczyć nadchodzące wydarzenia.",
+      "signInWithGoogle": "Zaloguj się przez Google",
+      "signOut": "Wyloguj się z Kalendarza Google",
+      "daysAhead": "Pokaż wydarzenia na",
+      "day": "dzień",
+      "days": "dni",
+      "selectCalendars": "Wybierz kalendarze do wyświetlenia"
+    }
+  },
+  "common": {
+    "cancel": "Anuluj",
+    "save": "Zapisz"
+  }
+}

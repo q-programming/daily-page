@@ -1,0 +1,509 @@
+openapi: 3.0.3
+info:
+  title: Daily API
+  description: API for daily application with weather, location, authentication, and calendar functionality
+  contact:
+    name: API Support
+  license:
+    name: Apache 2.0
+    url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
+  version: 1.0.0
+servers:
+  - url: '/api'
+paths:
+  /weather/current:
+    get:
+      tags:
+        - weather
+      description: Get current weather for a location
+      operationId: getCurrentWeather
+      parameters:
+        - name: lat
+          in: query
+          description: Latitude coordinate
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: lon
+          in: query
+          description: Longitude coordinate
+          required: true
+          schema:
+            type: number
+            format: double
+      responses:
+        200:
+          description: Current weather data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeatherData'
+        400:
+          description: Bad request - invalid coordinates
+        500:
+          description: Server error
+
+  /weather/forecast:
+    get:
+      tags:
+        - weather
+      description: Get weather forecast for a location
+      operationId: getWeatherForecast
+      parameters:
+        - name: lat
+          in: query
+          description: Latitude coordinate
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: lon
+          in: query
+          description: Longitude coordinate
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: days
+          in: query
+          description: Number of days for forecast
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: hours
+          in: query
+          description: Number of hours for forecast
+          required: false
+          schema:
+            type: integer
+            default: 24
+      responses:
+        200:
+          description: Weather forecast data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeatherForecast'
+        400:
+          description: Bad request - invalid parameters
+        500:
+          description: Server error
+
+  /weather/air-quality:
+    get:
+      tags:
+        - weather
+      description: Get air quality data for a location
+      operationId: getAirQuality
+      parameters:
+        - name: lat
+          in: query
+          description: Latitude coordinate
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: lon
+          in: query
+          description: Longitude coordinate
+          required: true
+          schema:
+            type: number
+            format: double
+      responses:
+        200:
+          description: Air quality data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AirQualityData'
+        400:
+          description: Bad request - invalid parameters
+        500:
+          description: Server error
+  /weather/location:
+    get:
+      tags:
+        - weather
+      description: Get geocoding data for a city name
+      operationId: geocodeLocation
+      parameters:
+        - name: name
+          in: query
+          description: City name to geocode
+          required: true
+          schema:
+            type: string
+        - name: language
+          in: query
+          description: Language for the results
+          required: false
+          schema:
+            type: string
+        - name: count
+          in: query
+          description: Maximum number of results to return
+          required: false
+          schema:
+            type: integer
+            default: 1
+      responses:
+        200:
+          description: Geocoding result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeocodingResult'
+        400:
+          description: Bad request - invalid city name
+        500:
+          description: Server error
+
+  /auth/user:
+    get:
+      tags:
+        - auth
+      description: Get current user information
+      operationId: getCurrentUser
+      responses:
+        200:
+          description: Current user information or unauthenticated status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+        500:
+          description: Server error
+
+  /auth/token:
+    get:
+      tags:
+        - auth
+      description: Get OAuth2 token information for the authenticated user
+      operationId: getOAuthToken
+      security:
+        - oauth2: [ ]
+      responses:
+        200:
+          description: Token information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenInfo'
+        401:
+          description: Unauthorized - not authenticated
+        500:
+          description: Server error
+
+  /calendar/list:
+    get:
+      tags:
+        - calendar
+      description: Get list of user's calendars
+      operationId: getCalendarList
+      security:
+        - oauth2: [ ]
+      responses:
+        200:
+          description: List of calendars
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Calendar'
+        401:
+          description: Unauthorized - not authenticated
+        500:
+          description: Server error
+
+  /calendar/events:
+    get:
+      tags:
+        - calendar
+      description: Get calendar events
+      operationId: getCalendarEvents
+      security:
+        - oauth2: [ ]
+      parameters:
+        - name: calendarId
+          in: query
+          description: ID of the calendar to fetch events from
+          required: false
+          schema:
+            type: string
+            default: primary
+        - name: days
+          in: query
+          description: Number of days to fetch events for
+          required: false
+          schema:
+            type: integer
+            default: 7
+      responses:
+        200:
+          description: List of calendar events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CalendarEvent'
+        401:
+          description: Unauthorized - not authenticated
+        500:
+          description: Server error
+
+components:
+  schemas:
+    WeatherData:
+      type: object
+      properties:
+        location:
+          $ref: '#/components/schemas/Location'
+        current:
+          $ref: '#/components/schemas/CurrentWeather'
+
+    CurrentWeather:
+      type: object
+      properties:
+        temperature:
+          type: number
+          format: double
+        humidity:
+          type: integer
+        windSpeed:
+          type: number
+          format: double
+        weatherCode:
+          type: integer
+
+    WeatherForecast:
+      type: object
+      properties:
+        location:
+          $ref: '#/components/schemas/Location'
+        current:
+          $ref: '#/components/schemas/CurrentWeather'
+        hourly:
+          type: array
+          items:
+            $ref: '#/components/schemas/HourlyForecast'
+        forecast:
+          type: array
+          items:
+            $ref: '#/components/schemas/Forecast'
+
+    Forecast:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        tempMin:
+          type: number
+          format: double
+        tempMax:
+          type: number
+          format: double
+        humidity:
+          type: integer
+        pressure:
+          type: integer
+        weatherCode:
+          type: integer
+        icon:
+          type: string
+    HourlyForecast:
+      type: object
+      properties:
+        time:
+          type: string
+          format: date-time
+        temperature:
+          type: number
+          format: double
+        humidity:
+          type: integer
+        windSpeed:
+          type: number
+          format: double
+        weatherCode:
+          type: integer
+
+    Location:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        country:
+          type: string
+        state:
+          type: string
+        lat:
+          type: number
+          format: double
+        lon:
+          type: number
+          format: double
+
+    UserInfo:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+        name:
+          type: string
+        email:
+          type: string
+        picture:
+          type: string
+
+    TokenInfo:
+      type: object
+      properties:
+        token_type:
+          type: string
+        access_token:
+          type: string
+        expires_at:
+          type: string
+
+    Calendar:
+      type: object
+      required:
+        - id
+        - summary
+      properties:
+        id:
+          type: string
+        summary:
+          type: string
+        description:
+          type: string
+        timeZone:
+          type: string
+        primary:
+          type: boolean
+        color:
+          type: string
+
+    CalendarEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        summary:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+        start:
+          type: object
+          properties:
+            date:
+              type: string
+              format: date
+            dateTime:
+              type: string
+              format: date-time
+            timeZone:
+              type: string
+        end:
+          type: object
+          properties:
+            date:
+              type: string
+              format: date
+            dateTime:
+              type: string
+              format: date-time
+            timeZone:
+              type: string
+        htmlLink:
+          type: string
+        calendarColor:
+          type: string
+
+    AirQualityData:
+      type: object
+      properties:
+        location:
+          $ref: '#/components/schemas/Location'
+        airQuality:
+          $ref: '#/components/schemas/AirQuality'
+
+    AirQuality:
+      type: object
+      properties:
+        aqi:
+          type: number
+          format: double
+        pm10:
+          type: number
+          format: double
+        pm2_5:
+          type: number
+          format: double
+        o3:
+          type: number
+          format: double
+        no2:
+          type: number
+          format: double
+        so2:
+          type: number
+          format: double
+        co:
+          type: number
+          format: double
+        nh3:
+          type: number
+          format: double
+        description:
+          type: string
+        icon:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    GeocodingResult:
+      type: object
+      properties:
+        name:
+          type: string
+        country:
+          type: string
+        state:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        timezone:
+          type: string
+        population:
+          type: integer
+        area:
+          type: number
+          format: double
+
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: /api/auth/login
+          scopes:
+            openid: OpenID Connect scope
+            profile: View user profile
+            email: View user email
+            https://www.googleapis.com/auth/calendar.readonly: View user's Google Calendar

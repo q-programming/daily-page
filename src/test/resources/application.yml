@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: Daily App Test
+  profiles:
+    active: test
+  cache:
+    type: simple
+    cache-names: weatherData, calendarList, calendarEvents
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-client-id
+            client-secret: test-client-secret
+            scope:
+              - email
+              - profile
+              - https://www.googleapis.com/auth/calendar.readonly
+
+# Logging configuration for tests
+logging:
+  level:
+    root: INFO
+    pl.qprogramming: DEBUG
+    org.springframework.web: INFO
+    org.springframework.security: INFO

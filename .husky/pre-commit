@@ -1,1 +1,1 @@
-npx lint-staged
+mvn test && cd src/main/webapp && npx lint-staged

@@ -1,0 +1,11 @@
+spring:
+  output:
+    ansi:
+      enabled: always
+
+logging:
+  level:
+    root: INFO
+    org.springframework: INFO
+    pl.qprogramming: DEBUG
+    org.hibernate: INFO
