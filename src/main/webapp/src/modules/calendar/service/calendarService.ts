@@ -115,9 +115,11 @@ export class CalendarService {
                                 description: event.description,
                                 start: {
                                     dateTime: event.start?.dateTime || '',
+                                    date: event.start?.date || '',
                                 },
                                 end: {
                                     dateTime: event.end?.dateTime || '',
+                                    date: event.end?.date || '',
                                 },
                                 calendarId: calendarId,
                                 calendarSummary: calendar.summary,

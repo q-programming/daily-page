@@ -7,6 +7,10 @@ import type { CalendarEvent } from '@api';
  */
 export function groupEventsByDate(events: CalendarEvent[]): GroupedEvents {
     const groupedEvents: GroupedEvents = {};
+    const today = new Date();
+    // Set today to beginning of day for comparison
+    today.setHours(0, 0, 0, 0);
+
     events.forEach((event) => {
         let startDate: Date | null = null;
         let endDate: Date | null = null;
@@ -27,25 +31,45 @@ export function groupEventsByDate(events: CalendarEvent[]): GroupedEvents {
         } else if (event.end?.dateTime) {
             endDate = new Date(event.end.dateTime);
         }
+
         if (startDate) {
-            const loopEndDate = endDate && endDate > startDate ? endDate : startDate;
-            for (let d = new Date(startDate); d <= loopEndDate; d.setDate(d.getDate() + 1)) {
-                const dateKey = d.toLocaleDateString();
-                if (!groupedEvents[dateKey]) {
-                    groupedEvents[dateKey] = [];
+            // For multi-day events, adjust startDate to be today if it's in the past
+            let adjustedStartDate = new Date(startDate);
+            if (adjustedStartDate < today) {
+                adjustedStartDate = new Date(today);
+            }
+            const loopEndDate = endDate && endDate > adjustedStartDate ? endDate : adjustedStartDate;
+            // Only process if the end date is today or in the future
+            if (loopEndDate >= today) {
+                for (let date = new Date(adjustedStartDate); date <= loopEndDate; date.setDate(date.getDate() + 1)) {
+                    // Use a consistent ISO format for dateKey instead of locale-dependent format
+                    const dateKey = formatDateToKey(date);
+                    if (!groupedEvents[dateKey]) {
+                        groupedEvents[dateKey] = [];
+                    }
+                    groupedEvents[dateKey].push(event);
                 }
-                groupedEvents[dateKey].push(event);
             }
         }
     });
-
     return groupedEvents;
 }
 
 /**
+ * Formats a date to a consistent key format (YYYY-MM-DD)
+ * This ensures that date keys are not affected by locale settings
+ */
+const formatDateToKey = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+/**
  * Formats event time for display
  */
-export function formatEventTime(event: CalendarEvent, dateKey: string): string {
+export const formatEventTime = (event: CalendarEvent, dateKey: string): string => {
     const displayDate = new Date(dateKey);
     displayDate.setHours(0, 0, 0, 0);
 
@@ -86,12 +110,12 @@ export function formatEventTime(event: CalendarEvent, dateKey: string): string {
         // Event spans the whole day (started before, ends after)
         return i18next.t('calendar.dates.allDay');
     }
-}
+};
 
 /**
  * Formats date for display
  */
-export function formatDate(dateString: string): string {
+export const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     const today = new Date();
     const tomorrow = new Date();
@@ -119,12 +143,12 @@ export function formatDate(dateString: string): string {
             day: 'numeric',
         });
     }
-}
+};
 
 /**
  * Determines if date is today
  */
-export function isToday(dateString: string): boolean {
+export const isToday = (dateString: string): boolean => {
     const date = new Date(dateString);
     const today = new Date();
 
@@ -133,4 +157,4 @@ export function isToday(dateString: string): boolean {
         date.getMonth() === today.getMonth() &&
         date.getFullYear() === today.getFullYear()
     );
-}
+};

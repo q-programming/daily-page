@@ -106,10 +106,13 @@ public class CalendarService {
     public List<Event> getCalendarEvents(String accessToken, String calendarId, int days) throws GeneralSecurityException, IOException {
         log.debug("Fetching calendar events for access token: {}, calendarId: {}, days: {}", accessToken, calendarId, days);
         Calendar service = createCalendarClient(accessToken);
-        val now = LocalDateTime.now();
-        val endDate = now.plusDays(days);
+        val now = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        // Set endDate to the end of the last day (23:59:59) to include all events on that day
+        val endDate = now.plusDays(days).withHour(23).withMinute(59).withSecond(59);
         val startDateTime = new DateTime(Date.from(now.atZone(ZoneId.systemDefault()).toInstant()));
         val endDateTime = new DateTime(Date.from(endDate.atZone(ZoneId.systemDefault()).toInstant()));
+
+        log.debug("Fetching events from {} to {}", now, endDate);
 
         val allEvents = new ArrayList<Event>();
         String pageToken = null;

@@ -40,9 +40,7 @@ public class CalendarApiDelegateImpl implements CalendarApiDelegate {
             String accessToken = authorizedClient.getAccessToken().getTokenValue();
             List<CalendarListEntry> googleCalendars = calendarService.getCalendarList(accessToken);
             List<Calendar> calendars = googleCalendars.stream()
-                    .peek(entry -> {
-                       log.debug("Calendar entry: {}", entry);
-                    })
+                    .peek(entry -> log.debug("Calendar entry: {}", entry.getSummary()))
                     .map(calendarMapper::toDto)
                     .collect(Collectors.toList());
             return ResponseEntity.ok(calendars);
@@ -65,9 +63,7 @@ public class CalendarApiDelegateImpl implements CalendarApiDelegate {
 
             List<Event> googleEvents = calendarService.getCalendarEvents(accessToken, calId, daysCount);
             List<CalendarEvent> events = googleEvents.stream()
-                    .peek(event -> {
-                        log.debug("Calendar event: {}", event);
-                    })
+                    .peek(event -> log.debug("Calendar event: {}-{} : {}", event.getStart(), event.getEnd(), event.getSummary()))
                     .map(calendarMapper::toDto)
                     .collect(Collectors.toList());
             return ResponseEntity.ok(events);
