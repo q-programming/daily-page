@@ -1,0 +1,40 @@
+{
+  "kind": "calendar#calendarList",
+  "etag": "\"p324n8d37oihm20g\"",
+  "nextSyncToken": "CNjVps2ChIMDEhJqb2huZG9lQGV4YW1wbGUuY29t",
+  "items": [
+    {
+      "kind": "calendar#calendarListEntry",
+      "etag": "\"1573825356000000\"",
+      "id": "primary",
+      "summary": "Primary Calendar",
+      "description": "This is my primary calendar",
+      "timeZone": "Europe/Warsaw",
+      "colorId": "15",
+      "backgroundColor": "#9fc6e7",
+      "foregroundColor": "#000000",
+      "selected": true,
+      "accessRole": "owner",
+      "defaultReminders": [
+        {
+          "method": "popup",
+          "minutes": 10
+        }
+      ],
+      "primary": true
+    },
+    {
+      "kind": "calendar#calendarListEntry",
+      "etag": "\"1573825356000000\"",
+      "id": "en.polish#holiday@group.v.calendar.google.com",
+      "summary": "Polish Holidays",
+      "description": "Polish Holidays",
+      "timeZone": "Europe/Warsaw",
+      "colorId": "17",
+      "backgroundColor": "#9a9cff",
+      "foregroundColor": "#000000",
+      "selected": true,
+      "accessRole": "reader"
+    }
+  ]
+}

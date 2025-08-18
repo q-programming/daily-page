@@ -52,7 +52,7 @@ public class CalendarService {
      * @throws GeneralSecurityException If there's a security-related error when creating the transport
      * @throws IOException If there's an I/O error during client creation
      */
-    private Calendar createCalendarClient(String accessToken) throws GeneralSecurityException, IOException {
+    Calendar createCalendarClient(String accessToken) throws GeneralSecurityException, IOException {
         // Create GoogleCredentials from the access token
         val credentials = GoogleCredentials.create(new AccessToken(accessToken, null));
         val requestInitializer = new HttpCredentialsAdapter(credentials);
