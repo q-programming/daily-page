@@ -31,4 +31,3 @@ public class OAuth2ClientConfig {
         return authorizedClientManager;
     }
 }
-
