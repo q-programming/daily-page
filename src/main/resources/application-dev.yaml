@@ -3,9 +3,17 @@ spring:
     ansi:
       enabled: always
 
+# Custom OAuth2 token expiration for testing refresh flow
+oauth2:
+  token:
+    check-rate-ms: 60000
+    expiry-minutes: 1
+
 logging:
   level:
     root: INFO
     org.springframework: INFO
     pl.qprogramming: DEBUG
     org.hibernate: INFO
+    # Enable debug logging for OAuth2 operations to see token details
+    org.springframework.security.oauth2: DEBUG

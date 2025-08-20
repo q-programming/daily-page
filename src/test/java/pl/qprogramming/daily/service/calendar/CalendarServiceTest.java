@@ -4,11 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.Calendar;
-import com.google.api.services.calendar.model.CalendarList;
-import com.google.api.services.calendar.model.CalendarListEntry;
-import com.google.api.services.calendar.model.Event;
-import com.google.api.services.calendar.model.EventDateTime;
-import com.google.api.services.calendar.model.Events;
+import com.google.api.services.calendar.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,7 +12,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -183,7 +178,7 @@ class CalendarServiceTest {
         CalendarService serviceSpy = spy(calendarService);
 
         // Mock the createCalendarClient method which is now package-private
-        doReturn(calendarClient).when(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN);
+        doReturn(calendarClient).when(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN, null, null);
 
         // Setup calendar list mocks
         when(calendarClient.calendarList()).thenReturn(mockCalendarList);
@@ -191,7 +186,7 @@ class CalendarServiceTest {
         when(mockCalendarListRequest.execute()).thenReturn(testCalendarList);
 
         // Execute test
-        List<CalendarListEntry> result = serviceSpy.getCalendarList(TEST_ACCESS_TOKEN);
+        List<CalendarListEntry> result = serviceSpy.getCalendarList(TEST_ACCESS_TOKEN, null, null);
 
         // Verify results
         assertNotNull(result);
@@ -200,7 +195,7 @@ class CalendarServiceTest {
         assertEquals("Polish Holidays", result.get(1).getSummary());
 
         // Verify interactions
-        verify(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN);
+        verify(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN, null, null);
         verify(calendarClient).calendarList();
         verify(mockCalendarList).list();
         verify(mockCalendarListRequest).execute();
@@ -212,7 +207,7 @@ class CalendarServiceTest {
         CalendarService serviceSpy = spy(calendarService);
 
         // Mock the createCalendarClient method which is now package-private
-        doReturn(calendarClient).when(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN);
+        doReturn(calendarClient).when(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN, null, null);
 
         // Setup calendar list mocks to throw exception
         when(calendarClient.calendarList()).thenReturn(mockCalendarList);
@@ -220,10 +215,10 @@ class CalendarServiceTest {
         when(mockCalendarListRequest.execute()).thenThrow(new IOException("Test exception"));
 
         // Execute test and verify exception is thrown
-        assertThrows(IOException.class, () -> serviceSpy.getCalendarList(TEST_ACCESS_TOKEN));
+        assertThrows(IOException.class, () -> serviceSpy.getCalendarList(TEST_ACCESS_TOKEN, null, null));
 
         // Verify interactions
-        verify(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN);
+        verify(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN, null, null);
         verify(calendarClient).calendarList();
         verify(mockCalendarList).list();
         verify(mockCalendarListRequest).execute();
@@ -235,7 +230,7 @@ class CalendarServiceTest {
         CalendarService serviceSpy = spy(calendarService);
 
         // Mock the createCalendarClient method which is now package-private
-        doReturn(calendarClient).when(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN);
+        doReturn(calendarClient).when(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN, null, null);
 
         // Setup events mocks
         when(calendarClient.events()).thenReturn(mockEvents);
@@ -248,7 +243,7 @@ class CalendarServiceTest {
         when(mockEventsList.execute()).thenReturn(testEvents);
 
         // Execute test
-        List<Event> result = serviceSpy.getCalendarEvents(TEST_ACCESS_TOKEN, TEST_CALENDAR_ID, TEST_DAYS);
+        List<Event> result = serviceSpy.getCalendarEvents(TEST_ACCESS_TOKEN, null, null, TEST_CALENDAR_ID, TEST_DAYS);
 
         // Verify results
         assertNotNull(result);
@@ -257,7 +252,7 @@ class CalendarServiceTest {
         assertEquals("Lunch with Client", result.get(1).getSummary());
 
         // Verify interactions
-        verify(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN);
+        verify(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN, null, null);
         verify(calendarClient).events();
         verify(mockEvents).list(TEST_CALENDAR_ID);
         verify(mockEventsList).setTimeMin(any());
@@ -273,7 +268,7 @@ class CalendarServiceTest {
         CalendarService serviceSpy = spy(calendarService);
 
         // Mock the createCalendarClient method which is now package-private
-        doReturn(calendarClient).when(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN);
+        doReturn(calendarClient).when(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN, null, null);
 
         // Setup events mocks to throw exception
         when(calendarClient.events()).thenReturn(mockEvents);
@@ -286,10 +281,10 @@ class CalendarServiceTest {
         when(mockEventsList.execute()).thenThrow(new IOException("Test exception"));
 
         // Execute test and verify exception is thrown
-        assertThrows(IOException.class, () -> serviceSpy.getCalendarEvents(TEST_ACCESS_TOKEN, TEST_CALENDAR_ID, TEST_DAYS));
+        assertThrows(IOException.class, () -> serviceSpy.getCalendarEvents(TEST_ACCESS_TOKEN, null, null, TEST_CALENDAR_ID, TEST_DAYS));
 
         // Verify interactions
-        verify(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN);
+        verify(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN, null, null);
         verify(calendarClient).events();
         verify(mockEvents).list(TEST_CALENDAR_ID);
         verify(mockEventsList).setTimeMin(any());
@@ -305,7 +300,7 @@ class CalendarServiceTest {
         CalendarService serviceSpy = spy(calendarService);
 
         // Mock the createCalendarClient method which is now package-private
-        doReturn(calendarClient).when(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN);
+        doReturn(calendarClient).when(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN, null, null);
 
         // Create first page of events
         Events firstPageEvents = new Events();
@@ -329,14 +324,14 @@ class CalendarServiceTest {
         when(mockEventsList.setPageToken("next-page-token")).thenReturn(mockEventsList);
 
         // Execute test
-        List<Event> result = serviceSpy.getCalendarEvents(TEST_ACCESS_TOKEN, TEST_CALENDAR_ID, TEST_DAYS);
+        List<Event> result = serviceSpy.getCalendarEvents(TEST_ACCESS_TOKEN, null, null, TEST_CALENDAR_ID, TEST_DAYS);
 
         // Verify results
         assertNotNull(result);
         assertEquals(2, result.size());
 
         // Verify pagination interactions
-        verify(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN);
+        verify(serviceSpy).createCalendarClient(TEST_ACCESS_TOKEN, null, null);
         verify(mockEventsList).setPageToken(null);
         verify(mockEventsList).setPageToken("next-page-token");
         verify(mockEventsList, times(2)).execute();
@@ -346,6 +341,6 @@ class CalendarServiceTest {
     void createCalendarClient_CanBeCalledDirectly() throws GeneralSecurityException, IOException {
         // Test that we can directly call the method now that it's package-private
         // This is more of a sanity check that our visibility change worked
-        assertDoesNotThrow(() -> calendarService.createCalendarClient(TEST_ACCESS_TOKEN));
+        assertDoesNotThrow(() -> calendarService.createCalendarClient(TEST_ACCESS_TOKEN, null, null));
     }
 }

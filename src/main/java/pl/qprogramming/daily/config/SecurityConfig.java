@@ -5,11 +5,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 import pl.qprogramming.daily.service.AuthorizedClientsService;
 
@@ -20,13 +20,13 @@ import java.util.function.Consumer;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
+public class SecurityConfig {
 
     private final AuthorizedClientsService authorizedClientsService;
     private final ClientRegistrationRepository clientRegistrationRepository;
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
                         // Allow static resources and public endpoints
@@ -46,9 +46,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         ).permitAll()
                         // Explicitly permit all weather endpoints - with different path patterns
                         .antMatchers("/api/weather/**", "/weather/**").permitAll()
-                        // Auth endpoints - some public, some protected
-                        .antMatchers("/api/auth/login", "/api/auth/user", "/auth/login", "/auth/user").permitAll()
-                        .antMatchers("/api/auth/token", "/auth/token").authenticated()
+                        // Auth endpoints - all public for authentication flow
+                        .antMatchers("/api/auth/login", "/api/auth/user", "/api/auth/token", "/auth/login", "/auth/user", "/auth/token").permitAll()
                         // Protected calendar endpoints
                         .antMatchers("/api/calendar/**", "/calendar/**").authenticated()
                         // All other requests need authentication
@@ -76,6 +75,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         .authenticationEntryPoint(new Http403ForbiddenEntryPoint())
                 .and()
                 .csrf().disable();
+
+        return http.build();
     }
 
     /**
@@ -105,8 +106,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return customizer -> {
             Map<String, Object> additionalParams = new HashMap<>();
             additionalParams.put("access_type", "offline");
-            // Force approval prompt to ensure refresh token is always provided
-            additionalParams.put("prompt", "consent");
+            additionalParams.put("prompt", "consent");  // Always ask for consent to ensure we get a refresh token
             customizer.additionalParameters(params -> params.putAll(additionalParams));
         };
     }

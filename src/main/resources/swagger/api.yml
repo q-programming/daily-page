@@ -177,26 +177,6 @@ paths:
         500:
           description: Server error
 
-  /auth/token:
-    get:
-      tags:
-        - auth
-      description: Get OAuth2 token information for the authenticated user
-      operationId: getOAuthToken
-      security:
-        - oauth2: [ ]
-      responses:
-        200:
-          description: Token information
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TokenInfo'
-        401:
-          description: Unauthorized - not authenticated
-        500:
-          description: Server error
-
   /calendar/list:
     get:
       tags:
@@ -255,7 +235,43 @@ paths:
           description: Unauthorized - not authenticated
         500:
           description: Server error
-
+  /calendar/all-events:
+    get:
+      tags:
+        - calendar
+      description: Get calendar events for multiple calendars
+      operationId: getAllCalendarEvents
+      security:
+        - oauth2: [ ]
+      parameters:
+        - name: calendarId
+          in: query
+          description: ID of the calendar to fetch events from
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: days
+          in: query
+          description: Number of days to fetch events for
+          required: false
+          schema:
+            type: integer
+            default: 7
+      responses:
+        200:
+          description: List of calendar events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CalendarEvent'
+        401:
+          description: Unauthorized - not authenticated
+        500:
+          description: Server error
 components:
   schemas:
     WeatherData:
@@ -372,6 +388,9 @@ components:
           type: string
         expires_at:
           type: string
+        requires_reauthentication:
+          type: boolean
+          description: Indicates if the user needs to re-authenticate (e.g., when token has expired and no refresh token is available)
 
     Calendar:
       type: object

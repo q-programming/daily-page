@@ -1,5 +1,7 @@
 package pl.qprogramming.daily.config;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
@@ -10,6 +12,8 @@ import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizedCli
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
 
 @Configuration
+@Slf4j
+@RequiredArgsConstructor
 public class OAuth2ClientConfig {
 
     @Bean
@@ -30,4 +34,5 @@ public class OAuth2ClientConfig {
 
         return authorizedClientManager;
     }
+
 }

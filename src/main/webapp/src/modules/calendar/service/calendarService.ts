@@ -32,8 +32,9 @@ export class CalendarService {
     public async initialize(wasConnected: boolean): Promise<void> {
         await this.checkAuthentication();
         if (wasConnected && !this.isAuthenticated) {
-            // If user was previously connected, but session has expired,
-            // try to re-authenticate. This will trigger a redirect.
+            console.log(
+                'User was previously connected but session expired. Redirecting to login...',
+            );
             this.signIn();
         }
     }
@@ -61,7 +62,6 @@ export class CalendarService {
             localStorage.removeItem('calendarSettings');
             this.isAuthenticated = false;
             window.location.href = '/daily/api/auth/logout';
-            // await authApi.logoutUser();
         } catch (error) {
             console.error('Error during sign out:', error);
         }

@@ -11,7 +11,7 @@
 	<groupId>pl.qprogramming</groupId>
 	<artifactId>daily</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<packaging>war</packaging>
+	<packaging>${packaging.type}</packaging>
 	<name>daily</name>
 	<description>daily page supporting api</description>
 	<url/>
@@ -27,12 +27,33 @@
 		<tag/>
 		<url/>
 	</scm>
+
+	<!-- Define profiles for jar or war packaging -->
+	<profiles>
+		<profile>
+			<id>jar</id>
+			<properties>
+				<packaging.type>jar</packaging.type>
+			</properties>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+		</profile>
+		<profile>
+			<id>war</id>
+			<properties>
+				<packaging.type>war</packaging.type>
+			</properties>
+		</profile>
+	</profiles>
+
 	<properties>
 		<java.version>11</java.version>
         <node.version>v20.11.1</node.version>
         <npm.version>10.2.4</npm.version>
 		<frontend-maven-plugin.version>1.12.1</frontend-maven-plugin.version>
 		<lombok.version>1.18.24</lombok.version>
+		<packaging.type>jar</packaging.type> <!-- Default packaging type -->
 	</properties>
 	<dependencies>
 		<!-- Spring Boot Starter Dependencies -->
@@ -40,7 +61,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-		<!-- Tomcat provided at runtime by the servlet container -->
+		<!-- Tomcat provided at runtime by the servlet container when deployed as WAR -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-tomcat</artifactId>
