@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import './App.css';
 import { Weather } from './modules/weather/components/Weather.tsx';
 import { Header } from './modules/header/Header.tsx';
 import { Box, CssBaseline, ThemeProvider } from '@mui/material';
-import { lightTheme, darkTheme } from './theme/theme.ts';
+import { darkTheme, lightTheme } from './theme/theme.ts';
 import { Calendar } from './modules/calendar/components/Calendar.tsx';
+import Footer from './modules/footer/Footer';
 
 function App() {
     // State to track if we're using dark mode
@@ -30,10 +31,14 @@ function App() {
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline /> {/* This applies the base styles from the theme */}
-            <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Box
+                sx={{ minHeight: '100vh', width: '100%', display: 'flex', flexDirection: 'column' }}
+            >
                 <Header onToggleTheme={handleToggleTheme} />
                 <Weather />
                 <Calendar />
+                <Box sx={{ flexGrow: 1 }} />
+                <Footer />
             </Box>
         </ThemeProvider>
     );
