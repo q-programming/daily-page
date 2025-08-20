@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ClassPathResource;
 
@@ -31,7 +32,6 @@ class CalendarServiceTest {
     private static final String TEST_ACCESS_TOKEN = "test-access-token";
     private static final String TEST_CALENDAR_ID = "primary";
     private static final int TEST_DAYS = 7;
-    private static final String APPLICATION_NAME = "Daily App Test";
 
     @InjectMocks
     private CalendarService calendarService;
@@ -51,17 +51,19 @@ class CalendarServiceTest {
     @Mock
     private Calendar.Events.List mockEventsList;
 
-    private ObjectMapper objectMapper;
+    @Spy
+    private CalendarMapperImpl calendarMapper;
+
     private CalendarList testCalendarList;
     private Events testEvents;
 
     @BeforeEach
     void setUp() throws IOException {
-        objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         // Create a properly constructed CalendarList
         testCalendarList = new CalendarList();
-        Map<String, Object> calendarListMap = objectMapper.readValue(
+        val calendarListMap = objectMapper.readValue(
                 new ClassPathResource("calendar/calendar_list.json").getInputStream(),
                 Map.class);
         testCalendarList.setEtag((String) calendarListMap.get("etag"));
@@ -339,9 +341,8 @@ class CalendarServiceTest {
     }
 
     @Test
-    void createCalendarClient_CanBeCalledDirectly() throws GeneralSecurityException, IOException {
-        // Test that we can directly call the method now that it's package-private
-        // This is more of a sanity check that our visibility change worked
+    void createCalendarClient_CanBeCalledDirectly() {
         assertDoesNotThrow(() -> calendarService.createCalendarClient(TEST_ACCESS_TOKEN, null, null));
     }
 }
+

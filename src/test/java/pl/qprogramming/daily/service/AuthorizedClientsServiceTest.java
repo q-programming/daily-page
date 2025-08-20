@@ -43,6 +43,8 @@ class AuthorizedClientsServiceTest {
         // Given
         when(authentication.getName()).thenReturn(PRINCIPAL_NAME);
         when(authorizedClient.getAccessToken()).thenReturn(accessToken);
+        // Ensure token is valid according to service logic
+        when(accessToken.getExpiresAt()).thenReturn(Instant.now().plus(Duration.ofMinutes(10)));
         when(authorizedClient.getRefreshToken()).thenReturn(null);
 
         // When
@@ -86,7 +88,7 @@ class AuthorizedClientsServiceTest {
     }
 
     @Test
-    void loadAuthorizedClient_WithExpiredToken_NoRefreshToken_ShouldReturnClient() {
+    void loadAuthorizedClient_WithExpiredToken_NoRefreshToken_ShouldReturnNull() {
         // Given
         when(authentication.getName()).thenReturn(PRINCIPAL_NAME);
         when(authorizedClient.getAccessToken()).thenReturn(accessToken);
@@ -99,8 +101,7 @@ class AuthorizedClientsServiceTest {
         OAuth2AuthorizedClient result = service.loadAuthorizedClient(CLIENT_REGISTRATION_ID, PRINCIPAL_NAME);
 
         // Then
-        assertNotNull(result);
-        assertEquals(authorizedClient, result);
+        assertNull(result);
     }
 
     @Test
