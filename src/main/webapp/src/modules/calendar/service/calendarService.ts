@@ -100,57 +100,35 @@ export class CalendarService {
             }
         }
         try {
-            const allEvents: CalendarEvent[] = [];
-            // Fetch events from each selected calendar
-            const promises = calendars.map(async (calendar) => {
-                const calendarId = calendar.id;
-                try {
-                    // Use saved calendar data or default
-                    try {
-                        const response = await calendarApi.getCalendarEvents(calendarId, daysAhead);
-                        if (response.data) {
-                            return response.data.map((event: CalendarEvent) => ({
-                                id: event.id || '',
-                                summary: event.summary || '(No title)',
-                                description: event.description,
-                                start: {
-                                    dateTime: event.start?.dateTime || '',
-                                    date: event.start?.date || '',
-                                },
-                                end: {
-                                    dateTime: event.end?.dateTime || '',
-                                    date: event.end?.date || '',
-                                },
-                                calendarId: calendarId,
-                                calendarSummary: calendar.summary,
-                                calendarColor: calendar.color || '#039be5',
-                            }));
-                        }
-                    } catch (err) {
-                        console.error(`Error fetching events for calendar ${calendarId}:`, err);
-                    }
-
-                    return [];
-                } catch (err) {
-                    console.error(`Error processing calendar ${calendarId}:`, err);
-                    return [];
+            const calendarIds: string[] = [];
+            const calendarColorMap: Record<string, string> = {};
+            calendars.forEach((calendar) => {
+                calendarIds.push(calendar.id);
+                calendarColorMap[calendar.id] = calendar.color || '#039be5'; // Default color if not provided
+            });
+            try {
+                const response = await calendarApi.getAllCalendarEvents(calendarIds, daysAhead);
+                if (response.data) {
+                    return response.data.map((event: CalendarEvent) => ({
+                        id: event.id || '',
+                        summary: event.summary,
+                        description: event.description,
+                        start: {
+                            dateTime: event.start?.dateTime || '',
+                            date: event.start?.date || '',
+                        },
+                        end: {
+                            dateTime: event.end?.dateTime || '',
+                            date: event.end?.date || '',
+                        },
+                        calendarId: event.calendarId || '',
+                        calendarColor: calendarColorMap[event.calendarId!],
+                    }));
                 }
-            });
-
-            // Wait for all promises, but handle individual calendar failures
-            const results = await Promise.all(promises);
-            results.forEach((events) => {
-                if (Array.isArray(events)) {
-                    allEvents.push(...events);
-                }
-            });
-
-            // Sort all events by date
-            return allEvents.sort((a, b) => {
-                const dateA = a.start?.dateTime ? new Date(a.start.dateTime) : new Date();
-                const dateB = b.start?.dateTime ? new Date(b.start.dateTime) : new Date();
-                return dateA.getTime() - dateB.getTime();
-            });
+            } catch (err) {
+                console.error(`Error fetching events for calendars ${calendarIds}:`, err);
+            }
+            return [];
         } catch (error) {
             console.error('Error fetching events:', error);
             return [];

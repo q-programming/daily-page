@@ -10,11 +10,13 @@ import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.UserCredentials;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import pl.qprogramming.daily.dto.CalendarEvent;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -24,6 +26,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static pl.qprogramming.daily.config.CacheConfig.CacheNames;
 
@@ -37,6 +40,7 @@ import static pl.qprogramming.daily.config.CacheConfig.CacheNames;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class CalendarService {
 
     @Value("${spring.application.name}")
@@ -47,6 +51,8 @@ public class CalendarService {
 
     @Value("${spring.security.oauth2.client.registration.google.client-secret}")
     private String clientSecret;
+
+    private final CalendarMapper calendarMapper;
 
     /**
      * Creates a Google Calendar client with the provided access token.
@@ -136,17 +142,15 @@ public class CalendarService {
      * @throws IOException              If there's an I/O error during the API call
      */
     @Cacheable(value = CacheNames.CALENDAR_EVENTS, key = "#accessToken + '-' + #calendarId + '-' + #days", cacheManager = "calendarCacheManager")
-    public List<Event> getCalendarEvents(String accessToken, Instant expiresAt, String refreshToken, String calendarId, int days) throws GeneralSecurityException, IOException {
+    public List<CalendarEvent> getCalendarEvents(String accessToken, Instant expiresAt, String refreshToken, String calendarId, int days) throws GeneralSecurityException, IOException {
         log.debug("Fetching calendar events for access token: {}, calendarId: {}, days: {}", accessToken, calendarId, days);
         Calendar calendarClient = createCalendarClient(accessToken, expiresAt, refreshToken);
-        val now = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        val now = LocalDateTime.now();
         // Set endDate to the end of the last day (23:59:59) to include all events on that day
         val endDate = now.plusDays(days).withHour(23).withMinute(59).withSecond(59);
         val startDateTime = new DateTime(Date.from(now.atZone(ZoneId.systemDefault()).toInstant()));
         val endDateTime = new DateTime(Date.from(endDate.atZone(ZoneId.systemDefault()).toInstant()));
-
-        log.debug("Fetching events from {} to {}", now, endDate);
-
+        log.debug("Fetching events from {} to {}", startDateTime, endDate);
         val allEvents = new ArrayList<Event>();
         String pageToken = null;
 
@@ -161,6 +165,9 @@ public class CalendarService {
             allEvents.addAll(events.getItems());
             pageToken = events.getNextPageToken();
         } while (pageToken != null);
-        return allEvents;
+        return allEvents
+                .stream()
+                .map(event -> calendarMapper.toDto(event, calendarId))
+                .collect(Collectors.toList());
     }
 }

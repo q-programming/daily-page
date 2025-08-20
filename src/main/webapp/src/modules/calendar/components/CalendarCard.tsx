@@ -227,7 +227,7 @@ export const CalendarCard = ({ settings, onSaveSettings }: CalendarCardProps) =>
                                                         variant='body2'
                                                         sx={{ fontWeight: 'medium' }}
                                                     >
-                                                        {event.summary}
+                                                        {event.summary || t('calendar.noTitle')}
                                                     </Typography>
                                                     <Typography
                                                         variant='caption'

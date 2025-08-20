@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.model.*;
+import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -243,7 +244,7 @@ class CalendarServiceTest {
         when(mockEventsList.execute()).thenReturn(testEvents);
 
         // Execute test
-        List<Event> result = serviceSpy.getCalendarEvents(TEST_ACCESS_TOKEN, null, null, TEST_CALENDAR_ID, TEST_DAYS);
+        val result = serviceSpy.getCalendarEvents(TEST_ACCESS_TOKEN, null, null, TEST_CALENDAR_ID, TEST_DAYS);
 
         // Verify results
         assertNotNull(result);
@@ -324,7 +325,7 @@ class CalendarServiceTest {
         when(mockEventsList.setPageToken("next-page-token")).thenReturn(mockEventsList);
 
         // Execute test
-        List<Event> result = serviceSpy.getCalendarEvents(TEST_ACCESS_TOKEN, null, null, TEST_CALENDAR_ID, TEST_DAYS);
+       val result = serviceSpy.getCalendarEvents(TEST_ACCESS_TOKEN, null, null, TEST_CALENDAR_ID, TEST_DAYS);
 
         // Verify results
         assertNotNull(result);

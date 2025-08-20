@@ -446,6 +446,8 @@ components:
               type: string
         htmlLink:
           type: string
+        calendarId:
+          type: string
         calendarColor:
           type: string
 

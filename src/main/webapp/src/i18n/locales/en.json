@@ -69,6 +69,7 @@
   },
   "calendar": {
     "title": "Calendar",
+    "noTitle": "(No Title)",
     "connectPrompt": "Connect your Google Calendar to see your upcoming events.",
     "noEvents": "No upcoming events.",
     "errors": {

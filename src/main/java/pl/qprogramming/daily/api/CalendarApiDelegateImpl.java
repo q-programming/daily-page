@@ -87,12 +87,9 @@ public class CalendarApiDelegateImpl implements CalendarApiDelegate {
             val allEvents = new ArrayList<CalendarEvent>();
             // Fetch events from each calendar
             for (String calId : calendarsToFetch) {
-                List<Event> googleEvents = calendarService.getCalendarEvents(
+                val googleEvents = calendarService.getCalendarEvents(
                         accessToken, expiresAt, refreshToken, calId, daysCount);
-                List<CalendarEvent> events = googleEvents.stream()
-                        .map(calendarMapper::toDto)
-                        .collect(Collectors.toList());
-                allEvents.addAll(events);
+                allEvents.addAll(googleEvents);
             }
             // Sort all events by start time using a proper Comparator
             allEvents.sort(new CalendarEventComparator());

@@ -27,6 +27,13 @@ public interface CalendarMapper {
     @Mapping(target = "end.date", source = "end.date", qualifiedByName = "dateTimeToLocalDate")
     CalendarEvent toDto(Event event);
 
+    @Mapping(target = "start.dateTime", source = "event.start.dateTime", qualifiedByName = "dateTimeToOffsetDateTime")
+    @Mapping(target = "end.dateTime", source = "event.end.dateTime", qualifiedByName = "dateTimeToOffsetDateTime")
+    @Mapping(target = "start.date", source = "event.start.date", qualifiedByName = "dateTimeToLocalDate")
+    @Mapping(target = "end.date", source = "event.end.date", qualifiedByName = "dateTimeToLocalDate")
+    @Mapping(target = "calendarId", source = "calendarId")
+    CalendarEvent toDto(Event event, String calendarId);
+
     /**
      * Maps Google Calendar DateTime to Java OffsetDateTime
      *
