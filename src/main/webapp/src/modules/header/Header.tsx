@@ -4,6 +4,7 @@ import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { Help } from './Help';
 
 interface HeaderProps {
     onToggleTheme?: () => void;
@@ -52,12 +53,13 @@ export const Header = ({ onToggleTheme }: HeaderProps) => {
                 {greeting}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Help />
                 <LanguageSwitcher />
                 <IconButton
                     onClick={onToggleTheme}
                     aria-label='toggle theme'
-                    color='primary'
                     data-testid='toggle-theme-button'
+                    sx={{ color: 'inherit' }}
                 >
                     {isDarkMode ? <DarkModeIcon /> : <LightModeIcon />}
                 </IconButton>

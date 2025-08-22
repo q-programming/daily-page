@@ -3,7 +3,8 @@
     "morning": "Dzień Dobry",
     "afternoon": "Dzień Dobry",
     "evening": "Dobry Wieczór",
-    "night": "Dobranoc"
+    "night": "Dobranoc",
+    "help": "Pomoc"
   },
   "weather": {
     "title": "Następne Godziny",
@@ -71,6 +72,7 @@
     "title": "Kalendarz",
     "noTitle": "(Brak Tytułu)",
     "connectPrompt": "Połącz swój Kalendarz Google, aby zobaczyć nadchodzące wydarzenia.",
+    "noCalendars": "Kliknij ikonę ustawień, aby wybrać kalendarze do wyświetlenia wydarzeń.",
     "noEvents": "Brak nadchodzących wydarzeń.",
     "errors": {
       "fetchFailed": "Nie udało się załadować wydarzeń z kalendarza. Spróbuj ponownie.",
@@ -94,6 +96,7 @@
   },
   "common": {
     "cancel": "Anuluj",
-    "save": "Zapisz"
+    "save": "Zapisz",
+    "close": "Zamknij"
   }
 }

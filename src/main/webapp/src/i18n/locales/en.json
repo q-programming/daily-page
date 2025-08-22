@@ -3,7 +3,8 @@
     "morning": "Good Morning",
     "afternoon": "Good Afternoon",
     "evening": "Good Evening",
-    "night": "Good Night"
+    "night": "Good Night",
+    "help": "Help"
   },
   "weather": {
     "title": "Next Hours",
@@ -71,6 +72,7 @@
     "title": "Calendar",
     "noTitle": "(No Title)",
     "connectPrompt": "Connect your Google Calendar to see your upcoming events.",
+    "noCalendars": "Click the settings icon to select calendars to display events.",
     "noEvents": "No upcoming events.",
     "errors": {
       "fetchFailed": "Failed to load calendar events. Please try again.",
@@ -94,6 +96,7 @@
   },
   "common": {
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "close": "Close"
   }
 }
