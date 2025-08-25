@@ -27,6 +27,7 @@ export const CalendarCard = ({ settings, onSaveSettings }: CalendarCardProps) =>
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [calendarService, setCalendarService] = useState<CalendarService | null>(null);
+    const [sessionExpired, setSessionExpired] = useState(false);
 
     // Create and initialize calendar service
     useEffect(() => {
@@ -40,6 +41,7 @@ export const CalendarCard = ({ settings, onSaveSettings }: CalendarCardProps) =>
                 // Initialize the service
                 await service.initialize(settings.isConnected);
                 setCalendarService(service);
+                setSessionExpired(service.hasSessionExpired());
 
                 if (service.isSignedIn()) {
                     onSaveSettings({
@@ -74,7 +76,8 @@ export const CalendarCard = ({ settings, onSaveSettings }: CalendarCardProps) =>
                 setError(null);
 
                 if (!calendarService.isSignedIn()) {
-                    setError(t('calendar.errors.notSignedIn'));
+                    // Reflect session-expired state in UI and stop here; don't show a generic error
+                    setSessionExpired(calendarService.hasSessionExpired());
                     setLoading(false);
                     return;
                 }
@@ -175,7 +178,7 @@ export const CalendarCard = ({ settings, onSaveSettings }: CalendarCardProps) =>
     const sortedDates = Object.keys(groupedEvents).sort(
         (a, b) => new Date(a).getTime() - new Date(b).getTime(),
     );
-    if (!settings.isConnected) {
+    if (!settings.isConnected || sessionExpired) {
         return (
             <Card
                 variant='outlined'
@@ -200,7 +203,9 @@ export const CalendarCard = ({ settings, onSaveSettings }: CalendarCardProps) =>
                         }}
                     >
                         <Typography variant='body1' textAlign='center' gutterBottom>
-                            {t('calendar.connectPrompt')}
+                            {sessionExpired
+                                ? t('calendar.errors.sessionExpired')
+                                : t('calendar.connectPrompt')}
                         </Typography>
                         <Button variant='contained' color='primary' onClick={handleSignIn}>
                             {t('calendar.settings.signInWithGoogle')}

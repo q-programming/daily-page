@@ -12,6 +12,8 @@ const authApi = new AuthApi(configuration, '', api);
 
 export class CalendarService {
     private isAuthenticated = false;
+    // Track whether the user was previously connected but is no longer authenticated
+    private sessionExpired = false;
 
     /**
      * Check if user is authenticated
@@ -31,11 +33,11 @@ export class CalendarService {
      */
     public async initialize(wasConnected: boolean): Promise<void> {
         await this.checkAuthentication();
-        if (wasConnected && !this.isAuthenticated) {
-            console.log(
-                'User was previously connected but session expired. Redirecting to login...',
-            );
-            this.signIn();
+        // Mark session as expired when the app remembers a previous connection but auth is no longer valid
+        this.sessionExpired = Boolean(wasConnected && !this.isAuthenticated);
+        if (this.sessionExpired) {
+            console.log('User was previously connected but session expired. Prompt to re-login.');
+            // Do not redirect automatically; UI should show a prompt and sign-in button instead.
         }
     }
 
@@ -44,6 +46,13 @@ export class CalendarService {
      */
     public isSignedIn(): boolean {
         return this.isAuthenticated;
+    }
+
+    /**
+     * Returns true if the user was previously connected but current session is not authenticated
+     */
+    public hasSessionExpired(): boolean {
+        return this.sessionExpired;
     }
 
     /**
@@ -61,6 +70,7 @@ export class CalendarService {
         try {
             localStorage.removeItem('calendarSettings');
             this.isAuthenticated = false;
+            this.sessionExpired = false;
             window.location.href = '/daily/api/auth/logout';
         } catch (error) {
             console.error('Error during sign out:', error);

@@ -1,5 +1,6 @@
 package pl.qprogramming.daily.service;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,6 +17,7 @@ import java.time.Instant;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
+@Disabled("AuthorizedClientsService is no longer used in production; test disabled")
 @ExtendWith(MockitoExtension.class)
 class AuthorizedClientsServiceTest {
 

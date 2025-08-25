@@ -76,7 +76,9 @@
     "noEvents": "Brak nadchodzących wydarzeń.",
     "errors": {
       "fetchFailed": "Nie udało się załadować wydarzeń z kalendarza. Spróbuj ponownie.",
-      "notSignedIn": "Nie jesteś zalogowany do Google, zaloguj się, aby kontynuować."
+      "notSignedIn": "Nie jesteś zalogowany do Google, zaloguj się, aby kontynuować.",
+      "initFailed": "Nie udało się zainicjalizować kalendarza. Spróbuj ponownie.",
+      "sessionExpired": "Twoja sesja Google wygasła. Zaloguj się ponownie."
     },
     "dates": {
       "today": "Dziś",
@@ -91,7 +93,8 @@
       "daysAhead": "Pokaż wydarzenia na",
       "day": "dzień",
       "days": "dni",
-      "selectCalendars": "Wybierz kalendarze do wyświetlenia"
+      "selectCalendars": "Wybierz kalendarze do wyświetlenia",
+      "notConnected": "Brak połączenia z Kalendarzem Google. Zaloguj się."
     }
   },
   "common": {

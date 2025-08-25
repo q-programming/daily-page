@@ -11,7 +11,7 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequest
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
-import pl.qprogramming.daily.service.AuthorizedClientsService;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final AuthorizedClientsService authorizedClientsService;
+    private final OAuth2AuthorizedClientService authorizedClientService;
     private final ClientRegistrationRepository clientRegistrationRepository;
 
     @Bean
@@ -57,7 +57,7 @@ public class SecurityConfig {
                         .loginPage("/api/auth/login")
                         .defaultSuccessUrl("/", true)
                         .failureUrl("/api/auth/login?error=true")
-                        .authorizedClientService(authorizedClientsService)
+                        .authorizedClientService(authorizedClientService)
                         .authorizationEndpoint()
                                 .authorizationRequestResolver(
                                         authorizationRequestResolver(clientRegistrationRepository)

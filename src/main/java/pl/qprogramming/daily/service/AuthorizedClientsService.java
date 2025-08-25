@@ -6,7 +6,6 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
-import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -15,29 +14,10 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Service for managing OAuth2 authorized clients and their refresh tokens.
- * <p>
- * This implementation provides an in-memory storage solution for OAuth2 authorized clients
- * using ConcurrentHashMap for thread-safety. It stores both the authorized client objects
- * and separately manages refresh tokens to support automatic re-authentication when
- * access tokens expire.
- * </p>
- * <p>
- * The service supports:
- * <ul>
- *   <li>Storing and retrieving OAuth2 authorized clients by principal name</li>
- *   <li>Checking access token validity</li>
- *   <li>Managing refresh tokens for automatic token renewal</li>
- *   <li>Determining if a user has connected their calendar</li>
- * </ul>
- * </p>
- * <p>
- * Note: This is an in-memory implementation, so all stored data is lost when the application
- * is restarted. For production use with persistent storage, consider implementing a different
- * storage mechanism.
- * </p>
+ * Legacy in-memory OAuth2AuthorizedClientService used previously to hold refresh tokens in memory.
+ * Replaced by JdbcOAuth2AuthorizedClientService. Safe to delete.
  */
-@Service
+@Deprecated
 @Slf4j
 public class AuthorizedClientsService implements OAuth2AuthorizedClientService {
 

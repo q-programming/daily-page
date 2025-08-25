@@ -1,14 +1,14 @@
 package pl.qprogramming.daily.api;
 
 import com.google.api.services.calendar.model.CalendarListEntry;
-import com.google.api.services.calendar.model.Event;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Service;
 import pl.qprogramming.daily.dto.Calendar;
@@ -31,7 +31,7 @@ public class CalendarApiDelegateImpl implements CalendarApiDelegate {
 
     private final CalendarService calendarService;
     private final CalendarMapper calendarMapper;
-    private final OAuth2AuthorizedClientService clientService;
+    private final OAuth2AuthorizedClientManager authorizedClientManager;
 
     @Override
     public ResponseEntity<List<Calendar>> getCalendarList() {
@@ -105,9 +105,9 @@ public class CalendarApiDelegateImpl implements CalendarApiDelegate {
             return null;
         }
         OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
-        return clientService.loadAuthorizedClient(
-                oauthToken.getAuthorizedClientRegistrationId(),
-                oauthToken.getName()
-        );
+        OAuth2AuthorizeRequest request = OAuth2AuthorizeRequest.withClientRegistrationId(oauthToken.getAuthorizedClientRegistrationId())
+                .principal(oauthToken)
+                .build();
+        return authorizedClientManager.authorize(request);
     }
 }

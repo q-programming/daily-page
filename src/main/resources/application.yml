@@ -22,6 +22,14 @@ spring:
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
             jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
             user-name-attribute: sub
+  datasource:
+    url: jdbc:h2:file:/usr/local/daily/daily;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  sql:
+    init:
+      mode: always
 logging:
   level:
     org:
@@ -30,4 +38,10 @@ logging:
 server:
   servlet:
     context-path: /daily
+    session:
+      timeout: 14d           # Keep server-side session alive for 14 days
+      cookie:
+        max-age: 14d         # Make JSESSIONID persistent for 14 days
+        same-site: Lax       # Helps the browser keep the cookie across restarts and top-level navs
+        secure: true         #  serving over HTTPS
   port: 8080

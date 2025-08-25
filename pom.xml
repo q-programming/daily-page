@@ -81,6 +81,17 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-oauth2-client</artifactId>
 		</dependency>
+		<!-- JDBC for persisting OAuth2 authorized clients (refresh tokens) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-jdbc</artifactId>
+		</dependency>
+		<!-- H2 file database to store authorized clients -->
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>runtime</scope>
+		</dependency>
 		<!-- Google API Client for Calendar integration -->
 		<dependency>
 			<groupId>com.google.api-client</groupId>
