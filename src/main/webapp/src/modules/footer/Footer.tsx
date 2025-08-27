@@ -21,7 +21,7 @@ const Footer: React.FC = () => {
             <Typography variant='body2' color='text.secondary'>
                 &copy; {year} Q-Programming. All rights reserved.{' '}
                 <a
-                    href={`https://q-programming.pl/privacypolicy_${i18n.language}.html`}
+                    href={`https://q-programming.pl/privacy/daily/privacypolicy_${i18n.language}.html`}
                     target='_blank'
                     rel='noopener noreferrer'
                     style={{ color: 'inherit', textDecoration: 'underline' }}

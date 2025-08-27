@@ -42,7 +42,6 @@ public class AuthApiDelegateImpl implements AuthApiDelegate {
         userInfo.setAuthenticated(true);
         userInfo.setName(principal.getAttribute("name"));
         userInfo.setEmail(principal.getAttribute("email"));
-        userInfo.setPicture(principal.getAttribute("picture"));
         log.debug("User info retrieved: {}", userInfo);
         return ResponseEntity.ok(userInfo);
     }

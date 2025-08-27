@@ -20,7 +20,8 @@ export const AboutPl = () => {
                 <ListItem>
                     <ListItemText
                         primary='Integracja z Kalendarzem Google'
-                        secondary='Połącz swoje konto Google, aby wybrać kalendarze i wyświetlać nadchodzące wydarzenia dla wybranego zakresu dni.'
+                        secondary='Połącz swoje konto Google, aby wybrać kalendarze i wyświetlać nadchodzące wydarzenia dla wybranego zakresu dni.
+                         Jeżeli chcesz usunąć integrację, po prostu rozłącz swoje konto Google w Ustawieniach.'
                     />
                 </ListItem>
             </List>

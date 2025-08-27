@@ -19,7 +19,9 @@ export const AboutEn = () => {
                 <ListItem>
                     <ListItemText
                         primary='Google Calendar integration'
-                        secondary='Connect your Google account to select calendars and display upcoming events for a chosen number of days.'
+                        secondary='Connect your Google account to select calendars and display upcoming events for a chosen number of days.
+                        If you wish to remove the integration, simply disconnect your Google account in
+                    Settings.'
                     />
                 </ListItem>
             </List>

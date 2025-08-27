@@ -376,8 +376,6 @@ components:
           type: string
         email:
           type: string
-        picture:
-          type: string
 
     TokenInfo:
       type: object
