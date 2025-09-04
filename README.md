@@ -1,6 +1,6 @@
 # Daily Page App
 
-A React + TypeScript application that provides a personalized daily dashboard. The app displays:
+A Java Spring Boot application with embedded React + TypeScript frontend that provides a personalized daily dashboard. The app displays:
 
 - **Weather**: Current conditions and forecast for your location.
 - **Air Quality**: Real-time air quality index and details.
@@ -11,11 +11,28 @@ A React + TypeScript application that provides a personalized daily dashboard. T
 - Modular design for easy extension.
 - Localization support (English, Polish).
 - Responsive UI for desktop and mobile.
+- Spring Boot backend with RESTful API.
+- React frontend communicating with the API.
 
 ## Getting Started
+### Backend
+1. **Build and run the application**:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+   or
+   ```bash
+   mvnw.cmd spring-boot:run
+   ```
+2. **Access the application**:
+   ```
+   http://localhost:8080
+   ```
+
 ### Frontend
 1. **Install dependencies**:
    ```bash
+   cd src/main/webapp
    npm install
    ```
 2. **Start the development server**:
@@ -27,12 +44,37 @@ A React + TypeScript application that provides a personalized daily dashboard. T
    npm run build
    ```
 
+> Note: During the packaging process, the React Vite application is built into the static folder so that Spring Boot can serve it. The frontend communicates with the backend API.
+
+## Building
+The application can be built with two different profiles:
+
+### JAR Package
+```bash
+./mvnw clean package
+```
+This creates a standalone executable JAR file that includes an embedded web server.
+
+### WAR Package
+```bash
+./mvnw clean package -Pwar
+```
+This creates a WAR file that can be deployed to an external web server or servlet container.
+
+### Differences
+- **JAR**: Self-contained, includes embedded Tomcat, easier for microservices and standalone deployments.
+- **WAR**: Deployable to existing application servers, suitable for environments where multiple applications share the same server.
+
 ### Project Structure
 
 - `src/main/webapp/modules/weather` – Weather and air quality components/services
+- `src/main/webapp/modules/calendar` – Google Calendar components/services
 - `src/main/webapp/src/modules/header` – App header
 - `src/main/webapp/src/i18n` – Localization files
 - `src/main/webapp/src/theme` – Theme configuration
+- `src/main/java` - Backend Java code
+- `src/main/resources` - Backend configuration files
+
 ### Development
 
 ### Debugging
@@ -51,9 +93,11 @@ If you want to run test normally without debugger , you can remove this configur
 
 ### Technologies Used
 
-- React
+- Spring Boot (Backend)
+- React (Frontend)
 - TypeScript
 - Vite
+- Maven
 
 ## License
 
