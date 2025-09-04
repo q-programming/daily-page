@@ -1,4 +1,4 @@
-package pl.qprogramming.daily.service.weather.model;
+package pl.qprogramming.daily.service.weather.model.openweather;
 
 import lombok.Data;
 

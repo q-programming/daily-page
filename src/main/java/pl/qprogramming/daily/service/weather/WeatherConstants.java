@@ -13,10 +13,16 @@ public class WeatherConstants {
         // Prevent instantiation
     }
 
-    // API URLs
+    // Open-Meteo API URLs
     public static final String OPEN_METEO_FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
     public static final String OPEN_METEO_GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search";
     public static final String OPEN_METEO_AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality";
+
+    // AccuWeather API URLs
+    public static final String ACCU_WEATHER_LOCATION_URL = "http://dataservice.accuweather.com/locations/v1/cities/geoposition/search";
+    public static final String ACCU_WEATHER_CURRENT_CONDITIONS_URL = "http://dataservice.accuweather.com/currentconditions/v1";
+    public static final String ACCU_WEATHER_FORECAST_URL = "http://dataservice.accuweather.com/forecasts/v1/daily/5day";
+    public static final String ACCU_WEATHER_HOURLY_FORECAST_URL = "http://dataservice.accuweather.com/forecasts/v1/hourly/12hour";
 
     // Cache configuration
     public static final long CACHE_DURATION = 60 * 60 * 1000; // 1 hour

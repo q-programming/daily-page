@@ -1,6 +1,8 @@
-package pl.qprogramming.daily.service.weather.model;
+package pl.qprogramming.daily.service.weather.model.openweather;
 
 import lombok.Data;
+import pl.qprogramming.daily.service.weather.model.AirQualityCurrent;
+import pl.qprogramming.daily.service.weather.model.AirQualityHourly;
 
 /**
  * Model for the Open-Meteo air quality response

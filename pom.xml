@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>pl.qprogramming</groupId>
 	<artifactId>daily</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<packaging>${packaging.type}</packaging>
 	<name>daily</name>
 	<description>daily page supporting api</description>

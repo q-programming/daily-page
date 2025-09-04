@@ -1,12 +1,14 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     formatHour,
+    getAccuWeatherIcon,
     getAqiInfo,
     getWeatherIcon,
     getWeatherTextFromCode,
     isDaytime,
 } from '../weatherUtils';
 import i18n from '../../../../i18n/i18n.ts';
+import { WeatherProvider } from '@api';
 
 // Save original language
 const originalLanguage = i18n.language;
@@ -59,32 +61,82 @@ describe('weatherUtils', () => {
         });
     });
 
-    describe('getWeatherIcon', () => {
-        it('should return correct day icon for daytime weather codes', () => {
+    describe('getAccuWeatherIcon', () => {
+        it('should return correct day icon for daytime AccuWeather codes', () => {
             // Test day icons explicitly passing daytime
-            expect(getWeatherIcon(0, '2025-08-11T14:00:00Z')).toBe('wi:day-sunny');
-            expect(getWeatherIcon(1, '2025-08-11T14:00:00Z')).toBe('wi:day-cloudy');
-            expect(getWeatherIcon(95, '2025-08-11T14:00:00Z')).toBe('wi:day-thunderstorm');
+            expect(getAccuWeatherIcon(1, '2025-08-11T14:00:00Z')).toBe('wi:day-sunny'); // Sunny
+            expect(getAccuWeatherIcon(3, '2025-08-11T14:00:00Z')).toBe('wi:day-cloudy'); // Partly Sunny
+            expect(getAccuWeatherIcon(15, '2025-08-11T14:00:00Z')).toBe('wi:thunderstorm'); // T-Storms
         });
 
-        it('should return correct night icon for nighttime weather codes', () => {
+        it('should return correct night icon for nighttime AccuWeather codes', () => {
             // Test night icons explicitly passing nighttime
-            expect(getWeatherIcon(0, '2025-08-11T03:00:00Z')).toBe('wi:night-clear');
-            expect(getWeatherIcon(1, '2025-08-11T03:00:00Z')).toBe('wi:night-alt-cloudy');
-            expect(getWeatherIcon(95, '2025-08-11T03:00:00Z')).toBe('wi:night-alt-thunderstorm');
+            expect(getAccuWeatherIcon(1, '2025-08-11T03:00:00Z')).toBe('wi:night-clear'); // Clear
+            expect(getAccuWeatherIcon(3, '2025-08-11T03:00:00Z')).toBe('wi:night-alt-cloudy'); // Partly Cloudy
+            expect(getAccuWeatherIcon(15, '2025-08-11T03:00:00Z')).toBe('wi:thunderstorm'); // T-Storms
+        });
+
+        it('should handle night-specific AccuWeather codes correctly', () => {
+            expect(getAccuWeatherIcon(33, '2025-08-11T14:00:00Z')).toBe('wi:night-clear'); // Clear (night)
+            expect(getAccuWeatherIcon(36, '2025-08-11T03:00:00Z')).toBe('wi:night-alt-cloudy'); // Intermittent Clouds (night)
+            expect(getAccuWeatherIcon(41, '2025-08-11T03:00:00Z')).toBe(
+                'wi:night-alt-thunderstorm',
+            ); // Partly Cloudy w/ T-Storms (night)
         });
 
         it('should return appropriate icon for weather codes that are the same day or night', () => {
             // These codes have the same icon day or night
-            expect(getWeatherIcon(3, '2025-08-11T14:00:00Z')).toBe('wi:cloudy');
-            expect(getWeatherIcon(3, '2025-08-11T03:00:00Z')).toBe('wi:cloudy');
-            expect(getWeatherIcon(45, '2025-08-11T14:00:00Z')).toBe('wi:fog');
-            expect(getWeatherIcon(45, '2025-08-11T03:00:00Z')).toBe('wi:fog');
+            expect(getAccuWeatherIcon(7, '2025-08-11T14:00:00Z')).toBe('wi:cloudy'); // Cloudy
+            expect(getAccuWeatherIcon(7, '2025-08-11T03:00:00Z')).toBe('wi:cloudy'); // Cloudy
+            expect(getAccuWeatherIcon(11, '2025-08-11T14:00:00Z')).toBe('wi:fog'); // Fog
+            expect(getAccuWeatherIcon(11, '2025-08-11T03:00:00Z')).toBe('wi:fog'); // Fog
         });
 
         it('should return not available icon for unknown weather codes', () => {
-            expect(getWeatherIcon(999)).toBe('wi:na');
-            expect(getWeatherIcon(-1)).toBe('wi:na');
+            expect(getAccuWeatherIcon(999)).toBe('wi:na');
+            expect(getAccuWeatherIcon(-1)).toBe('wi:na');
+        });
+    });
+
+    describe('getWeatherIcon', () => {
+        it('should return AccuWeather icon when provider is ACCUWEATHER', () => {
+            // Test some AccuWeather codes with the unified function
+            expect(getWeatherIcon(1, WeatherProvider.Accuweather, '2025-08-11T14:00:00Z')).toBe(
+                'wi:day-sunny',
+            );
+            expect(getWeatherIcon(7, WeatherProvider.Accuweather, '2025-08-11T14:00:00Z')).toBe(
+                'wi:cloudy',
+            );
+            expect(getWeatherIcon(33, WeatherProvider.Accuweather, '2025-08-11T03:00:00Z')).toBe(
+                'wi:night-clear',
+            );
+        });
+
+        it('should return OpenWeather icon when provider is OPENMETEO', () => {
+            // Test some OpenWeather codes with the unified function
+            expect(getWeatherIcon(0, WeatherProvider.Openweather, '2025-08-11T14:00:00Z')).toBe(
+                'wi:day-sunny',
+            );
+            expect(getWeatherIcon(3, WeatherProvider.Openweather, '2025-08-11T14:00:00Z')).toBe(
+                'wi:cloudy',
+            );
+            expect(getWeatherIcon(95, WeatherProvider.Openweather, '2025-08-11T03:00:00Z')).toBe(
+                'wi:night-alt-thunderstorm',
+            );
+        });
+
+        it('should default to OpenWeather icon when provider is not specified', () => {
+            // Should fall back to OpenWeather when no provider is specified
+            expect(getWeatherIcon(0, undefined, '2025-08-11T14:00:00Z')).toBe('wi:day-sunny');
+            expect(getWeatherIcon(3, undefined, '2025-08-11T03:00:00Z')).toBe('wi:cloudy');
+        });
+
+        it('should default to OpenWeather icon when provider is unknown', () => {
+            // Should fall back to OpenWeather when an unknown provider is specified
+            // @ts-expect-error - Deliberately testing with invalid enum value
+            expect(getWeatherIcon(0, 'UNKNOWN_PROVIDER', '2025-08-11T14:00:00Z')).toBe(
+                'wi:day-sunny',
+            );
         });
     });
 

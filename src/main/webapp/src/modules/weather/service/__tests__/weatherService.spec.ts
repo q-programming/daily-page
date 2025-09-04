@@ -18,7 +18,7 @@ describe('WeatherService', () => {
         const testSettings: WeatherSettings = {
             city: 'Test City',
         };
-        // Create instance of WeatherService
+        // Create instance of OpenWeatherService
         weatherService = new WeatherService(testSettings);
 
         // Mock the API response for geocoding

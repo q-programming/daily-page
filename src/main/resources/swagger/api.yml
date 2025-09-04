@@ -311,6 +311,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Forecast'
+        provider:
+          $ref: '#/components/schemas/WeatherProvider'
 
     Forecast:
       type: object
@@ -514,6 +516,9 @@ components:
         area:
           type: number
           format: double
+    WeatherProvider:
+      type: string
+      enum: [openweather,accuweather]
 
   securitySchemes:
     oauth2:

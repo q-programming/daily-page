@@ -3,7 +3,7 @@ package pl.qprogramming.daily.service.weather.mapper;
 import lombok.Getter;
 import org.mapstruct.*;
 import pl.qprogramming.daily.dto.*;
-import pl.qprogramming.daily.service.weather.model.*;
+import pl.qprogramming.daily.service.weather.model.openweather.*;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -142,12 +142,6 @@ public interface WeatherMapper {
     @Mapping(source = "response.current.european_aqi", target = "airQuality.description")
     AirQualityData toAirQualityData(OpenMeteoAirQuality response);
 
-    @Mapping(source = "name", target = "name")
-    @Mapping(source = "latitude", target = "latitude")
-    @Mapping(source = "longitude", target = "longitude")
-    @Mapping(source = "country", target = "country")
-    @Mapping(source = "timezone", target = "timezone")
-    GeocodingResult toGeocodingResponse(GeocodingResponse.GeocodingResult response);
 
     @Named("stringToLocalDate")
     default LocalDate stringToLocalDate(List<String> dates, int index) {
@@ -203,26 +197,5 @@ public interface WeatherMapper {
             return dateTime.format(DateTimeFormatter.ofPattern("HH:mm"));
         }
         return null;
-    }
-
-    /**
-     * Helper method to determine air quality description based on AQI value
-     */
-    default String getAirQualityDescription(Integer aqi) {
-        if (aqi == null) {
-            return "Unknown";
-        } else if (aqi <= 20) {
-            return "Good";
-        } else if (aqi <= 40) {
-            return "Fair";
-        } else if (aqi <= 60) {
-            return "Moderate";
-        } else if (aqi <= 80) {
-            return "Poor";
-        } else if (aqi <= 100) {
-            return "Very Poor";
-        } else {
-            return "Extremely Poor";
-        }
     }
 }

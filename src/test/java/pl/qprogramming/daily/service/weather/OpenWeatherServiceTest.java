@@ -14,9 +14,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 import pl.qprogramming.daily.dto.*;
 import pl.qprogramming.daily.service.weather.mapper.WeatherMapper;
-import pl.qprogramming.daily.service.weather.model.GeocodingResponse;
-import pl.qprogramming.daily.service.weather.model.OpenMeteoAirQuality;
-import pl.qprogramming.daily.service.weather.model.OpenMeteoWeatherResponse;
+import pl.qprogramming.daily.service.weather.model.openweather.OpenMeteoAirQuality;
+import pl.qprogramming.daily.service.weather.model.openweather.OpenMeteoWeatherResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,11 +27,8 @@ import static org.mockito.Mockito.*;
 import static pl.qprogramming.daily.service.weather.WeatherConstants.*;
 
 @ExtendWith(MockitoExtension.class)
-class WeatherServiceTest {
+class OpenWeatherServiceTest {
 
-    private static final String TEST_CITY = "Warsaw";
-    private static final String TEST_LANGUAGE = "pl";
-    private static final int TEST_COUNT = 1;
     private static final double TEST_LATITUDE = 52.2316;
     private static final double TEST_LONGITUDE = 21.0062;
     private static final Integer TEST_DAYS = 5;
@@ -44,16 +40,15 @@ class WeatherServiceTest {
     @Mock
     private WeatherMapper weatherMapper;
 
+
     @Spy
     @InjectMocks
-    private WeatherService weatherService;
+    private OpenWeatherService openWeatherService;
 
     private ObjectMapper objectMapper;
-    private GeocodingResponse geocodingResponse;
     private OpenMeteoWeatherResponse currentWeatherResponse;
     private OpenMeteoWeatherResponse forecastResponse;
     private OpenMeteoAirQuality airQualityResponse;
-    private GeocodingResult geocodingResult;
     private WeatherData weatherData;
     private WeatherForecast weatherForecast;
     private AirQualityData airQualityData;
@@ -64,9 +59,6 @@ class WeatherServiceTest {
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         // Load test data from JSON files
-        geocodingResponse = objectMapper.readValue(
-                new ClassPathResource("weather/geocoding_response.json").getInputStream(),
-                GeocodingResponse.class);
 
         currentWeatherResponse = objectMapper.readValue(
                 new ClassPathResource("weather/current_weather.json").getInputStream(),
@@ -81,11 +73,6 @@ class WeatherServiceTest {
                 OpenMeteoAirQuality.class);
 
         // Create correctly structured DTO objects for mapper responses based on actual generated classes
-        geocodingResult = new GeocodingResult()
-                .name("Warsaw")
-                .latitude(TEST_LATITUDE)
-                .longitude(TEST_LONGITUDE)
-                .country("Poland");
 
         // Set up CurrentWeather object
         CurrentWeather currentWeather = new CurrentWeather()
@@ -126,94 +113,10 @@ class WeatherServiceTest {
                         .description("Good"));
 
         // Replace the injected RestTemplate with our mock
-        ReflectionTestUtils.setField(weatherService, "restTemplate", restTemplate);
+        ReflectionTestUtils.setField(openWeatherService, "restTemplate", restTemplate);
     }
 
-    @Test
-    void geocodeLocation_Success() {
-        // Setup mocks
-        when(restTemplate.getForObject(contains(OPEN_METEO_GEOCODING_URL), eq(GeocodingResponse.class)))
-                .thenReturn(geocodingResponse);
-        when(weatherMapper.toGeocodingResponse(any())).thenReturn(geocodingResult);
 
-        // Execute test
-        GeocodingResult result = weatherService.geocodeLocation(TEST_CITY, TEST_LANGUAGE, TEST_COUNT);
-
-        // Verify results
-        assertNotNull(result);
-        assertEquals("Warsaw", result.getName());
-        assertEquals(TEST_LATITUDE, result.getLatitude());
-        assertEquals(TEST_LONGITUDE, result.getLongitude());
-        assertEquals("Poland", result.getCountry());
-
-        // Verify interactions
-        verify(restTemplate).getForObject(contains(OPEN_METEO_GEOCODING_URL), eq(GeocodingResponse.class));
-        verify(weatherMapper).toGeocodingResponse(any());
-    }
-
-    @Test
-    void geocodeLocation_NullCityName() {
-        // Execute test with null city name
-        GeocodingResult result = weatherService.geocodeLocation(null, TEST_LANGUAGE, TEST_COUNT);
-
-        // Verify result is null
-        assertNull(result);
-
-        // Verify no interactions with external services
-        verifyNoInteractions(restTemplate);
-        verifyNoInteractions(weatherMapper);
-    }
-
-    @Test
-    void geocodeLocation_EmptyCityName() {
-        // Execute test with empty city name
-        GeocodingResult result = weatherService.geocodeLocation("", TEST_LANGUAGE, TEST_COUNT);
-
-        // Verify result is null
-        assertNull(result);
-
-        // Verify no interactions with external services
-        verifyNoInteractions(restTemplate);
-        verifyNoInteractions(weatherMapper);
-    }
-
-    @Test
-    void geocodeLocation_ApiError() {
-        // Setup mocks to simulate API error
-        when(restTemplate.getForObject(contains(OPEN_METEO_GEOCODING_URL), eq(GeocodingResponse.class)))
-                .thenThrow(new RuntimeException("API Error"));
-
-        // Execute test
-        GeocodingResult result = weatherService.geocodeLocation(TEST_CITY, TEST_LANGUAGE, TEST_COUNT);
-
-        // Verify result is null due to error
-        assertNull(result);
-
-        // Verify interactions
-        verify(restTemplate).getForObject(contains(OPEN_METEO_GEOCODING_URL), eq(GeocodingResponse.class));
-        verifyNoInteractions(weatherMapper);
-    }
-
-    @Test
-    void geocodeLocation_EmptyResults() {
-        // Create response with empty results
-        GeocodingResponse emptyResponse = new GeocodingResponse();
-        emptyResponse.setResults(java.util.Collections.emptyList());
-
-        // Setup mocks
-        when(restTemplate.getForObject(contains(OPEN_METEO_GEOCODING_URL), eq(GeocodingResponse.class)))
-                .thenReturn(emptyResponse);
-
-        // Execute test
-        GeocodingResult result = weatherService.geocodeLocation(TEST_CITY, TEST_LANGUAGE, TEST_COUNT);
-
-        // Verify result is null due to empty results
-        assertNull(result);
-
-        // Verify interactions
-        verify(restTemplate).getForObject(contains(OPEN_METEO_GEOCODING_URL), eq(GeocodingResponse.class));
-        verifyNoInteractions(weatherMapper);
-    }
 
     @Test
     void getCurrentWeather_Success() {
@@ -223,7 +126,7 @@ class WeatherServiceTest {
         when(weatherMapper.toWeatherData(any())).thenReturn(weatherData);
 
         // Execute test
-        WeatherData result = weatherService.getCurrentWeather(TEST_LATITUDE, TEST_LONGITUDE);
+        WeatherData result = openWeatherService.getCurrentWeather(TEST_LATITUDE, TEST_LONGITUDE);
 
         // Verify results
         assertNotNull(result);
@@ -245,7 +148,7 @@ class WeatherServiceTest {
                 .thenThrow(new RuntimeException("API Error"));
 
         // Execute test
-        WeatherData result = weatherService.getCurrentWeather(TEST_LATITUDE, TEST_LONGITUDE);
+        WeatherData result = openWeatherService.getCurrentWeather(TEST_LATITUDE, TEST_LONGITUDE);
 
         // Verify result is null due to error
         assertNull(result);
@@ -262,7 +165,7 @@ class WeatherServiceTest {
                 .thenReturn(null);
 
         // Execute test
-        WeatherData result = weatherService.getCurrentWeather(TEST_LATITUDE, TEST_LONGITUDE);
+        WeatherData result = openWeatherService.getCurrentWeather(TEST_LATITUDE, TEST_LONGITUDE);
 
         // Verify result is null due to null response
         assertNull(result);
@@ -280,7 +183,7 @@ class WeatherServiceTest {
         when(weatherMapper.toWeatherForecast(any(), any(), any())).thenReturn(weatherForecast);
 
         // Execute test
-        WeatherForecast result = weatherService.getWeatherForecast(TEST_LATITUDE, TEST_LONGITUDE, TEST_DAYS, TEST_HOURS);
+        WeatherForecast result = openWeatherService.getWeatherForecast(TEST_LATITUDE, TEST_LONGITUDE, TEST_DAYS, TEST_HOURS);
 
         // Verify results
         assertNotNull(result);
@@ -301,7 +204,7 @@ class WeatherServiceTest {
                 .thenThrow(new RuntimeException("API Error"));
 
         // Execute test
-        WeatherForecast result = weatherService.getWeatherForecast(TEST_LATITUDE, TEST_LONGITUDE, TEST_DAYS, TEST_HOURS);
+        WeatherForecast result = openWeatherService.getWeatherForecast(TEST_LATITUDE, TEST_LONGITUDE, TEST_DAYS, TEST_HOURS);
 
         // Verify result is null due to error
         assertNull(result);
@@ -318,7 +221,7 @@ class WeatherServiceTest {
                 .thenReturn(null);
 
         // Execute test
-        WeatherForecast result = weatherService.getWeatherForecast(TEST_LATITUDE, TEST_LONGITUDE, TEST_DAYS, TEST_HOURS);
+        WeatherForecast result = openWeatherService.getWeatherForecast(TEST_LATITUDE, TEST_LONGITUDE, TEST_DAYS, TEST_HOURS);
 
         // Verify result is null due to null response
         assertNull(result);
@@ -336,7 +239,7 @@ class WeatherServiceTest {
         when(weatherMapper.toAirQualityData(any())).thenReturn(airQualityData);
 
         // Execute test
-        AirQualityData result = weatherService.getAirQuality(TEST_LATITUDE, TEST_LONGITUDE);
+        AirQualityData result = openWeatherService.getAirQuality(TEST_LATITUDE, TEST_LONGITUDE);
 
         // Verify results
         assertNotNull(result);
@@ -357,7 +260,7 @@ class WeatherServiceTest {
                 .thenThrow(new RuntimeException("API Error"));
 
         // Execute test
-        AirQualityData result = weatherService.getAirQuality(TEST_LATITUDE, TEST_LONGITUDE);
+        AirQualityData result = openWeatherService.getAirQuality(TEST_LATITUDE, TEST_LONGITUDE);
 
         // Verify result is null due to error
         assertNull(result);
@@ -374,7 +277,7 @@ class WeatherServiceTest {
                 .thenReturn(null);
 
         // Execute test
-        AirQualityData result = weatherService.getAirQuality(TEST_LATITUDE, TEST_LONGITUDE);
+        AirQualityData result = openWeatherService.getAirQuality(TEST_LATITUDE, TEST_LONGITUDE);
 
         // Verify result is null due to null response
         assertNull(result);
