@@ -14,3 +14,6 @@ Accept: application/json
 ### Forecast
 GET {{url}}/api/weather/forecast?lat=51.1&lon=17.03333
 Accept: application/json
+
+### GET location
+GET https://q-programming.pl/daily/api/weather/location?name=Wroc%C5%82aw&language=pl

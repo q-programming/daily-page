@@ -4,7 +4,7 @@ import { Weather } from '../Weather.tsx';
 import type { WeatherSettings } from '../../types/types.ts';
 import { createMockWeatherService } from '../../service/__tests__/weatherData.ts';
 
-// Mock the WeatherService with the correct path and implementation
+// Mock the OpenWeatherService with the correct path and implementation
 vi.mock('../../service/weatherService.ts', () => {
     return {
         WeatherService: vi.fn().mockImplementation(() => createMockWeatherService()),
@@ -139,7 +139,7 @@ describe('Weather', () => {
     });
 
     it('remounts WeatherCard when city changes', async () => {
-        // Access the mocked WeatherService constructor directly from the vi.mocked context
+        // Access the mocked OpenWeatherService constructor directly from the vi.mocked context
         const weatherServiceConstructor = vi.fn(() => createMockWeatherService());
 
         // Update the mock implementation

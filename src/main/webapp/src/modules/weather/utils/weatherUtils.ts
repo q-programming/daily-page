@@ -2,6 +2,7 @@
  * This file maps Open-Meteo weather codes to Iconify weather icons
  */
 import i18n from '../../../i18n/i18n.ts';
+import { WeatherProvider } from '@api';
 
 /**
  * Determines if it's currently daytime based on the hour
@@ -16,9 +17,22 @@ export const isDaytime = (datetime?: string): boolean => {
     return hour >= 6 && hour < 20;
 };
 
+// Choose the appropriate weather icon based on provider and weather code
+export const getWeatherIcon = (
+    weatherCode: number,
+    provider?: WeatherProvider,
+    datetime?: string,
+): string => {
+    if (provider === WeatherProvider.Accuweather) {
+        return getAccuWeatherIcon(weatherCode, datetime);
+    }
+    // Default to OpenWeather icon mapping
+    return getOpenWeatherIcon(weatherCode, datetime);
+};
+
 // Map Open-Meteo WMO weather codes to Iconify weather icons
 // Reference: https://open-meteo.com/en/docs/weather-api
-export const getWeatherIcon = (weatherCode: number, datetime?: string): string => {
+export const getOpenWeatherIcon = (weatherCode: number, datetime?: string): string => {
     const isDay = isDaytime(datetime);
 
     // Define both day and night versions of weather icons
@@ -51,6 +65,63 @@ export const getWeatherIcon = (weatherCode: number, datetime?: string): string =
         95: { day: 'wi:day-thunderstorm', night: 'wi:night-alt-thunderstorm' }, // Thunderstorm
         96: { day: 'wi:day-thunderstorm', night: 'wi:night-alt-thunderstorm' }, // Thunderstorm with slight hail
         99: { day: 'wi:thunderstorm', night: 'wi:thunderstorm' }, // Thunderstorm with heavy hail
+    };
+
+    // Return the appropriate icon based on time of day, or "not available" icon if not found
+    if (weatherCode in iconMap) {
+        return isDay ? iconMap[weatherCode].day : iconMap[weatherCode].night;
+    }
+
+    return 'wi:na'; // Return "not available" icon if weather code not found
+};
+
+// Map AccuWeather icon codes to Iconify weather icons
+// Reference: https://developer.accuweather.com/weather-icons
+export const getAccuWeatherIcon = (weatherCode: number, datetime?: string): string => {
+    const isDay = isDaytime(datetime);
+
+    // Define both day and night versions of weather icons for AccuWeather codes
+    const iconMap: Record<number, { day: string; night: string }> = {
+        1: { day: 'wi:day-sunny', night: 'wi:night-clear' }, // Sunny / Clear
+        2: { day: 'wi:day-sunny', night: 'wi:night-clear' }, // Mostly Sunny / Mostly Clear
+        3: { day: 'wi:day-cloudy', night: 'wi:night-alt-cloudy' }, // Partly Sunny / Partly Cloudy
+        4: { day: 'wi:day-cloudy', night: 'wi:night-alt-cloudy' }, // Intermittent Clouds
+        5: { day: 'wi:day-haze', night: 'wi:night-fog' }, // Hazy Sunshine / Hazy Moonlight
+        6: { day: 'wi:cloud', night: 'wi:cloud' }, // Mostly Cloudy
+        7: { day: 'wi:cloudy', night: 'wi:cloudy' }, // Cloudy
+        8: { day: 'wi:cloudy', night: 'wi:cloudy' }, // Dreary (Overcast)
+        11: { day: 'wi:fog', night: 'wi:fog' }, // Fog
+        12: { day: 'wi:day-showers', night: 'wi:night-alt-showers' }, // Showers
+        13: { day: 'wi:day-rain', night: 'wi:night-alt-rain' }, // Mostly Cloudy w/ Showers
+        14: { day: 'wi:day-cloudy', night: 'wi:night-alt-cloudy' }, // Partly Sunny w/ Showers
+        15: { day: 'wi:thunderstorm', night: 'wi:thunderstorm' }, // T-Storms
+        16: { day: 'wi:day-thunderstorm', night: 'wi:night-alt-thunderstorm' }, // Mostly Cloudy w/ T-Storms
+        17: { day: 'wi:day-thunderstorm', night: 'wi:night-alt-thunderstorm' }, // Partly Sunny w/ T-Storms
+        18: { day: 'wi:rain', night: 'wi:rain' }, // Rain
+        19: { day: 'wi:day-snow', night: 'wi:night-alt-snow' }, // Flurries
+        20: { day: 'wi:day-cloudy', night: 'wi:night-alt-cloudy' }, // Mostly Cloudy w/ Flurries
+        21: { day: 'wi:day-cloudy', night: 'wi:night-alt-cloudy' }, // Partly Sunny w/ Flurries
+        22: { day: 'wi:snow', night: 'wi:snow' }, // Snow
+        23: { day: 'wi:day-cloudy', night: 'wi:night-alt-cloudy' }, // Mostly Cloudy w/ Snow
+        24: { day: 'wi:sleet', night: 'wi:sleet' }, // Ice
+        25: { day: 'wi:sleet', night: 'wi:sleet' }, // Sleet
+        26: { day: 'wi:rain-mix', night: 'wi:rain-mix' }, // Freezing Rain
+        29: { day: 'wi:rain-mix', night: 'wi:rain-mix' }, // Rain and Snow
+        30: { day: 'wi:thermometer', night: 'wi:thermometer' }, // Hot
+        31: { day: 'wi:snowflake-cold', night: 'wi:snowflake-cold' }, // Cold
+        32: { day: 'wi:strong-wind', night: 'wi:strong-wind' }, // Windy
+        33: { day: 'wi:night-clear', night: 'wi:night-clear' }, // Clear (night)
+        34: { day: 'wi:night-alt-cloudy', night: 'wi:night-alt-cloudy' }, // Mostly Clear (night)
+        35: { day: 'wi:night-alt-cloudy', night: 'wi:night-alt-cloudy' }, // Partly Cloudy (night)
+        36: { day: 'wi:night-alt-cloudy', night: 'wi:night-alt-cloudy' }, // Intermittent Clouds (night)
+        37: { day: 'wi:night-fog', night: 'wi:night-fog' }, // Hazy Moonlight
+        38: { day: 'wi:cloud', night: 'wi:cloud' }, // Mostly Cloudy (night)
+        39: { day: 'wi:night-alt-showers', night: 'wi:night-alt-showers' }, // Partly Cloudy w/ Showers (night)
+        40: { day: 'wi:night-alt-rain', night: 'wi:night-alt-rain' }, // Mostly Cloudy w/ Showers (night)
+        41: { day: 'wi:night-alt-thunderstorm', night: 'wi:night-alt-thunderstorm' }, // Partly Cloudy w/ T-Storms (night)
+        42: { day: 'wi:night-alt-thunderstorm', night: 'wi:night-alt-thunderstorm' }, // Mostly Cloudy w/ T-Storms (night)
+        43: { day: 'wi:night-alt-cloudy', night: 'wi:night-alt-cloudy' }, // Mostly Cloudy w/ Flurries (night)
+        44: { day: 'wi:night-alt-snow', night: 'wi:night-alt-snow' }, // Mostly Cloudy w/ Snow (night)
     };
 
     // Return the appropriate icon based on time of day, or "not available" icon if not found

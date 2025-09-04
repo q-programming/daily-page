@@ -7,6 +7,7 @@ const supportedLanguages = [
     { code: 'pl', name: 'Polski' },
     { code: 'en', name: 'English' },
 ];
+
 export const LanguageSwitcher = () => {
     const { i18n } = useTranslation();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -21,8 +22,6 @@ export const LanguageSwitcher = () => {
     const changeLanguage = (languageCode: string) => {
         i18n.changeLanguage(languageCode).then(() => {
             handleClose();
-            console.log(`Language changed to: ${languageCode}`);
-            console.log('Current i18n language:', i18n.language);
         });
     };
 
@@ -43,9 +42,8 @@ export const LanguageSwitcher = () => {
                 size='small'
                 sx={{ color: 'inherit' }}
                 data-testid='language-switcher-button'
-            >
-                {currentLanguage}
-            </Button>
+                aria-label={`Click to change language, current language is ${currentLanguage}`}
+            ></Button>
             <Menu
                 id='language-menu'
                 anchorEl={anchorEl}

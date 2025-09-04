@@ -14,16 +14,11 @@ describe('WeatherService', () => {
     beforeEach(() => {
         // Clear local storage before each test
         localStorage.clear();
-
-        // Setup axios mock adapter
         mock = new MockAdapter(axios);
-
-        // Create test settings
         const testSettings: WeatherSettings = {
             city: 'Test City',
         };
-
-        // Create instance of WeatherService
+        // Create instance of OpenWeatherService
         weatherService = new WeatherService(testSettings);
 
         // Mock the API response for geocoding

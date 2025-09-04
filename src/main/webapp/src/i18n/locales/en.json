@@ -3,7 +3,8 @@
     "morning": "Good Morning",
     "afternoon": "Good Afternoon",
     "evening": "Good Evening",
-    "night": "Good Night"
+    "night": "Good Night",
+    "help": "Help"
   },
   "weather": {
     "title": "Next Hours",
@@ -69,11 +70,15 @@
   },
   "calendar": {
     "title": "Calendar",
+    "noTitle": "(No Title)",
     "connectPrompt": "Connect your Google Calendar to see your upcoming events.",
+    "noCalendars": "Click the settings icon to select calendars to display events.",
     "noEvents": "No upcoming events.",
     "errors": {
       "fetchFailed": "Failed to load calendar events. Please try again.",
-      "notSignedIn": "Not signed in into Google , please sign in"
+      "notSignedIn": "Not signed in into Google , please sign in",
+      "initFailed": "Failed to initialize calendar. Please try again.",
+      "sessionExpired": "Your Google session expired. Please sign in again."
     },
     "dates": {
       "today": "Today",
@@ -88,11 +93,13 @@
       "daysAhead": "Show events for",
       "day": "day",
       "days": "days",
-      "selectCalendars": "Select calendars to show"
+      "selectCalendars": "Select calendars to show",
+      "notConnected": "Not connected to Google Calendar. Please sign in."
     }
   },
   "common": {
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "close": "Close"
   }
 }

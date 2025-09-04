@@ -1,6 +1,5 @@
 package pl.qprogramming.daily.service.weather;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.cache.annotation.Cacheable;
@@ -8,13 +7,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import pl.qprogramming.daily.dto.AirQualityData;
-import pl.qprogramming.daily.dto.GeocodingResult;
 import pl.qprogramming.daily.dto.WeatherData;
 import pl.qprogramming.daily.dto.WeatherForecast;
 import pl.qprogramming.daily.service.weather.mapper.WeatherMapper;
-import pl.qprogramming.daily.service.weather.model.GeocodingResponse;
-import pl.qprogramming.daily.service.weather.model.OpenMeteoAirQuality;
-import pl.qprogramming.daily.service.weather.model.OpenMeteoWeatherResponse;
+import pl.qprogramming.daily.service.weather.model.openweather.OpenMeteoAirQuality;
+import pl.qprogramming.daily.service.weather.model.openweather.OpenMeteoWeatherResponse;
 
 import static pl.qprogramming.daily.service.weather.WeatherConstants.*;
 
@@ -23,7 +20,6 @@ import static pl.qprogramming.daily.service.weather.WeatherConstants.*;
  * <p>
  * This service provides methods to access various weather-related data from Open-Meteo APIs:
  * <ul>
- *     <li>Geocoding - convert city names to geographic coordinates</li>
  *     <li>Current weather - get current weather conditions for a location</li>
  *     <li>Weather forecast - get daily and hourly weather forecasts</li>
  *     <li>Air quality - get air quality metrics for a location</li>
@@ -33,56 +29,23 @@ import static pl.qprogramming.daily.service.weather.WeatherConstants.*;
  */
 @Service
 @Slf4j
-public class WeatherService {
+public class OpenWeatherService {
 
     private final RestTemplate restTemplate;
     private final WeatherMapper weatherMapper;
 
     /**
-     * Constructor for WeatherService.
+     * Constructor for OpenWeatherService.
      * Initializes a RestTemplate for making HTTP requests to weather APIs.
      *
      * @param weatherMapper Mapper for converting between API response models and DTOs
      */
-    public WeatherService(WeatherMapper weatherMapper) {
+    public OpenWeatherService(WeatherMapper weatherMapper) {
         this.restTemplate = new RestTemplate();
         this.weatherMapper = weatherMapper;
     }
 
-    /**
-     * Gets geocoding data for a city name.
-     *
-     * @param cityName Name of the city to geocode
-     * @param language Language code for the response (defaults to "en" if null)
-     * @param count Maximum number of results to return
-     * @return GeocodingResult containing location data or null if not found or error occurs
-     */
-    @Cacheable(value = GEOCODING_CACHE, key = "#cityName + '-' + #language")
-    public GeocodingResult geocodeLocation(String cityName, String language, int count) {
-        if (cityName == null || cityName.trim().isEmpty()) {
-            return null;
-        }
 
-        // Build the URL manually to preserve Polish characters instead of encoding them
-        String baseUrl = OPEN_METEO_GEOCODING_URL + "?";
-        String params = PARAM_NAME + "=" + cityName + "&" +
-                PARAM_LANGUAGE + "=" + (language != null ? language : DEFAULT_LANGUAGE) + "&" +
-                PARAM_COUNT + "=" + count;
-        String url = baseUrl + params;
-
-        try {
-            val response = restTemplate.getForObject(url, GeocodingResponse.class);
-            log.debug("Response from Open-Meteo Geocoding API: {}", response);
-            if (response != null && response.getResults() != null && !response.getResults().isEmpty()) {
-                val result = response.getResults().get(0);
-                return weatherMapper.toGeocodingResponse(result);
-            }
-            return null;
-        } catch (Exception e) {
-            log.error("Error geocoding location '{}': {}", cityName, e.getMessage());
-            return null;
-        }
-    }
 
     /**
      * Gets current weather data for a geographic location.

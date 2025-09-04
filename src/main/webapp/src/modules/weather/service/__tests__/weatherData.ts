@@ -114,7 +114,7 @@ export const mockAirQualityData: AirQualityData = {
     airQuality: mockAirQuality,
 };
 
-// Create a mock WeatherService implementation
+// Create a mock OpenWeatherService implementation
 export const createMockWeatherService = () => ({
     initialize: vi.fn().mockResolvedValue(undefined),
     getLocationData: vi.fn().mockResolvedValue(mockLocation),

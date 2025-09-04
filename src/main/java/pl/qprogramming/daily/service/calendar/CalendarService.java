@@ -9,19 +9,24 @@ import com.google.api.services.calendar.model.Event;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.UserCredentials;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import pl.qprogramming.daily.dto.CalendarEvent;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static pl.qprogramming.daily.config.CacheConfig.CacheNames;
 
@@ -35,10 +40,19 @@ import static pl.qprogramming.daily.config.CacheConfig.CacheNames;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class CalendarService {
 
     @Value("${spring.application.name}")
     private String applicationName;
+
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
+    private String clientId;
+
+    @Value("${spring.security.oauth2.client.registration.google.client-secret}")
+    private String clientSecret;
+
+    private final CalendarMapper calendarMapper;
 
     /**
      * Creates a Google Calendar client with the provided access token.
@@ -48,13 +62,34 @@ public class CalendarService {
      * </p>
      *
      * @param accessToken OAuth2 access token for Google Calendar API
+     * @param expiresAt   Token's actual expiration time
      * @return Configured Calendar service instance
      * @throws GeneralSecurityException If there's a security-related error when creating the transport
-     * @throws IOException If there's an I/O error during client creation
+     * @throws IOException              If there's an I/O error during client creation
      */
-    Calendar createCalendarClient(String accessToken) throws GeneralSecurityException, IOException {
-        // Create GoogleCredentials from the access token
-        val credentials = GoogleCredentials.create(new AccessToken(accessToken, null));
+    Calendar createCalendarClient(String accessToken, Instant expiresAt, String refreshToken) throws GeneralSecurityException, IOException {
+        // If no expiration time is provided, use a default (1 hour from now)
+        Date expirationTime = expiresAt != null
+                ? Date.from(expiresAt)
+                : new Date(System.currentTimeMillis() + 3600 * 1000); // 1 hour from now
+
+        // Create credentials with both access and refresh tokens if available
+        GoogleCredentials credentials;
+        if (refreshToken != null) {
+            // Use UserCredentials when we have a refresh token
+            credentials = UserCredentials.newBuilder()
+                    .setClientId(clientId)
+                    .setClientSecret(clientSecret)
+                    .setAccessToken(new AccessToken(accessToken, expirationTime))
+                    .setRefreshToken(refreshToken)
+                    .build();
+            log.debug("Created UserCredentials with refresh token capabilities");
+        } else {
+            // Fallback to simple credentials without refresh capabilities
+            credentials = GoogleCredentials.create(new AccessToken(accessToken, expirationTime));
+            log.debug("Created simple GoogleCredentials without refresh capabilities");
+        }
+
         val requestInitializer = new HttpCredentialsAdapter(credentials);
         return new Calendar.Builder(
                 GoogleNetHttpTransport.newTrustedTransport(),
@@ -72,15 +107,17 @@ public class CalendarService {
      * Results are cached for 5 minutes to reduce API calls.
      * </p>
      *
-     * @param accessToken OAuth2 access token for Google Calendar API
+     * @param accessToken  OAuth2 access token for Google Calendar API
+     * @param expiresAt    Token's expiration time
+     * @param refreshToken OAuth2 refresh token (optional)
      * @return List of calendar entries accessible to the user
      * @throws GeneralSecurityException If there's a security-related error
-     * @throws IOException If there's an I/O error during the API call
+     * @throws IOException              If there's an I/O error during the API call
      */
     @Cacheable(value = CacheNames.CALENDAR_LIST, key = "#accessToken", cacheManager = "calendarCacheManager")
-    public List<CalendarListEntry> getCalendarList(String accessToken) throws GeneralSecurityException, IOException {
+    public List<CalendarListEntry> getCalendarList(String accessToken, Instant expiresAt, String refreshToken) throws GeneralSecurityException, IOException {
         log.debug("Fetching calendar list for access token: {}", accessToken);
-        val calendarClient = createCalendarClient(accessToken);
+        val calendarClient = createCalendarClient(accessToken, expiresAt, refreshToken);
         val calendarList = calendarClient.calendarList().list().execute();
         return calendarList.getItems();
     }
@@ -95,27 +132,30 @@ public class CalendarService {
      * Results are cached for 5 minutes to reduce API calls.
      * </p>
      *
-     * @param accessToken OAuth2 access token for Google Calendar API
-     * @param calendarId ID of the calendar to retrieve events from
-     * @param days Number of days ahead to fetch events for
+     * @param accessToken  OAuth2 access token for Google Calendar API
+     * @param expiresAt    Token's expiration time
+     * @param refreshToken OAuth2 refresh token (optional)
+     * @param calendarId   ID of the calendar to retrieve events from
+     * @param days         Number of days ahead to fetch events for
      * @return List of calendar events within the specified time range
      * @throws GeneralSecurityException If there's a security-related error
-     * @throws IOException If there's an I/O error during the API call
+     * @throws IOException              If there's an I/O error during the API call
      */
     @Cacheable(value = CacheNames.CALENDAR_EVENTS, key = "#accessToken + '-' + #calendarId + '-' + #days", cacheManager = "calendarCacheManager")
-    public List<Event> getCalendarEvents(String accessToken, String calendarId, int days) throws GeneralSecurityException, IOException {
+    public List<CalendarEvent> getCalendarEvents(String accessToken, Instant expiresAt, String refreshToken, String calendarId, int days) throws GeneralSecurityException, IOException {
         log.debug("Fetching calendar events for access token: {}, calendarId: {}, days: {}", accessToken, calendarId, days);
-        Calendar service = createCalendarClient(accessToken);
+        Calendar calendarClient = createCalendarClient(accessToken, expiresAt, refreshToken);
         val now = LocalDateTime.now();
-        val endDate = now.plusDays(days);
+        // Set endDate to the end of the last day (23:59:59) to include all events on that day
+        val endDate = now.plusDays(days).withHour(23).withMinute(59).withSecond(59);
         val startDateTime = new DateTime(Date.from(now.atZone(ZoneId.systemDefault()).toInstant()));
         val endDateTime = new DateTime(Date.from(endDate.atZone(ZoneId.systemDefault()).toInstant()));
-
+        log.debug("Fetching events from {} to {}", startDateTime, endDate);
         val allEvents = new ArrayList<Event>();
         String pageToken = null;
 
         do {
-            val events = service.events().list(calendarId)
+            val events = calendarClient.events().list(calendarId)
                     .setTimeMin(startDateTime)
                     .setTimeMax(endDateTime)
                     .setOrderBy("startTime")
@@ -125,6 +165,9 @@ public class CalendarService {
             allEvents.addAll(events.getItems());
             pageToken = events.getNextPageToken();
         } while (pageToken != null);
-        return allEvents;
+        return allEvents
+                .stream()
+                .map(event -> calendarMapper.toDto(event, calendarId))
+                .collect(Collectors.toList());
     }
 }

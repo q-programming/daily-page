@@ -3,7 +3,8 @@
     "morning": "Dzień Dobry",
     "afternoon": "Dzień Dobry",
     "evening": "Dobry Wieczór",
-    "night": "Dobranoc"
+    "night": "Dobranoc",
+    "help": "Pomoc"
   },
   "weather": {
     "title": "Następne Godziny",
@@ -69,11 +70,15 @@
   },
   "calendar": {
     "title": "Kalendarz",
+    "noTitle": "(Brak Tytułu)",
     "connectPrompt": "Połącz swój Kalendarz Google, aby zobaczyć nadchodzące wydarzenia.",
+    "noCalendars": "Kliknij ikonę ustawień, aby wybrać kalendarze do wyświetlenia wydarzeń.",
     "noEvents": "Brak nadchodzących wydarzeń.",
     "errors": {
       "fetchFailed": "Nie udało się załadować wydarzeń z kalendarza. Spróbuj ponownie.",
-      "notSignedIn": "Nie jesteś zalogowany do Google, zaloguj się, aby kontynuować."
+      "notSignedIn": "Nie jesteś zalogowany do Google, zaloguj się, aby kontynuować.",
+      "initFailed": "Nie udało się zainicjalizować kalendarza. Spróbuj ponownie.",
+      "sessionExpired": "Twoja sesja Google wygasła. Zaloguj się ponownie."
     },
     "dates": {
       "today": "Dziś",
@@ -88,11 +93,13 @@
       "daysAhead": "Pokaż wydarzenia na",
       "day": "dzień",
       "days": "dni",
-      "selectCalendars": "Wybierz kalendarze do wyświetlenia"
+      "selectCalendars": "Wybierz kalendarze do wyświetlenia",
+      "notConnected": "Brak połączenia z Kalendarzem Google. Zaloguj się."
     }
   },
   "common": {
     "cancel": "Anuluj",
-    "save": "Zapisz"
+    "save": "Zapisz",
+    "close": "Zamknij"
   }
 }

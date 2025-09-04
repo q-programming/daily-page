@@ -5,14 +5,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
-import pl.qprogramming.daily.service.AuthorizedClientsService;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,16 +22,15 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final AuthorizedClientsService authorizedClientsService;
+    private final OAuth2AuthorizedClientService authorizedClientService;
     private final ClientRegistrationRepository clientRegistrationRepository;
-
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .authorizeHttpRequests(authorize -> authorize
+                .authorizeRequests()
                         // Allow static resources and public endpoints
-                        .requestMatchers(
+                        .antMatchers(
                                 "/",
                                 "/index.html",
                                 "/static/**",
@@ -47,37 +45,36 @@ public class SecurityConfig {
                                 "/error"
                         ).permitAll()
                         // Explicitly permit all weather endpoints - with different path patterns
-                        .requestMatchers("/api/weather/**", "/weather/**").permitAll()
-                        // Auth endpoints - some public, some protected
-                        .requestMatchers("/api/auth/login", "/api/auth/user", "/auth/login", "/auth/user").permitAll()
-                        .requestMatchers("/api/auth/token", "/auth/token").authenticated()
+                        .antMatchers("/api/weather/**", "/weather/**").permitAll()
+                        // Auth endpoints - all public for authentication flow
+                        .antMatchers("/api/auth/login", "/api/auth/user", "/api/auth/token", "/auth/login", "/auth/user", "/auth/token").permitAll()
                         // Protected calendar endpoints
-                        .requestMatchers("/api/calendar/**", "/calendar/**").authenticated()
+                        .antMatchers("/api/calendar/**", "/calendar/**").authenticated()
                         // All other requests need authentication
                         .anyRequest().authenticated()
-                )
-                .oauth2Login(oauth2 -> oauth2
+                .and()
+                .oauth2Login()
                         .loginPage("/api/auth/login")
                         .defaultSuccessUrl("/", true)
                         .failureUrl("/api/auth/login?error=true")
-                        .authorizedClientService(authorizedClientsService)
-                        .authorizationEndpoint(authorization -> authorization
+                        .authorizedClientService(authorizedClientService)
+                        .authorizationEndpoint()
                                 .authorizationRequestResolver(
                                         authorizationRequestResolver(clientRegistrationRepository)
                                 )
-                        )
-                )
-                .logout(logout -> logout
+                .and()
+                .and()
+                .logout()
                         .logoutUrl("/api/auth/logout")
                         .logoutSuccessUrl("/")
                         .clearAuthentication(true)
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
-                )
-                .exceptionHandling(exceptionHandling ->
-                        exceptionHandling.authenticationEntryPoint(new Http403ForbiddenEntryPoint())
-                )
-                .csrf(AbstractHttpConfigurer::disable);
+                .and()
+                .exceptionHandling()
+                        .authenticationEntryPoint(new Http403ForbiddenEntryPoint())
+                .and()
+                .csrf().disable();
 
         return http.build();
     }
@@ -109,8 +106,7 @@ public class SecurityConfig {
         return customizer -> {
             Map<String, Object> additionalParams = new HashMap<>();
             additionalParams.put("access_type", "offline");
-            // Force approval prompt to ensure refresh token is always provided
-            additionalParams.put("prompt", "consent");
+            additionalParams.put("prompt", "consent");  // Always ask for consent to ensure we get a refresh token
             customizer.additionalParameters(params -> params.putAll(additionalParams));
         };
     }

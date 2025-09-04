@@ -2,6 +2,31 @@ spring:
   output:
     ansi:
       enabled: always
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:h2:file:./data/daily;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  sql:
+    init:
+      mode: always
+
+server:
+  servlet:
+    session:
+      timeout: 14d           # Keep server-side session alive for 14 days
+      cookie:
+        max-age: 14d         # Make JSESSIONID persistent for 14 days
+        same-site: Lax       # Helps the browser keep the cookie across restarts and top-level navs
+
+# Custom OAuth2 token expiration for testing refresh flow
+oauth2:
+  token:
+    check-rate-ms: 60000
+    expiry-minutes: 1
 
 logging:
   level:
@@ -9,3 +34,6 @@ logging:
     org.springframework: INFO
     pl.qprogramming: DEBUG
     org.hibernate: INFO
+    # Enable debug logging for OAuth2 operations to see token details
+    org.springframework.security.oauth2: DEBUG
+

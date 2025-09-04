@@ -8,21 +8,20 @@ describe('LanguageSwitcher', () => {
         i18n.changeLanguage('en');
     });
 
-    it('renders language switcher button with current language', async () => {
+    it('renders language switcher button with current language in aria-label', async () => {
         const { getByTestId } = render(<LanguageSwitcher />);
         const button = getByTestId('language-switcher-button');
         expect(button).toBeInTheDocument();
-        expect(button.query()?.textContent).toContain('English');
+        expect(button).toHaveAttribute('aria-label', expect.stringContaining('English'));
     });
 
-    it('shows Polish as current language when i18n language is set to pl', async () => {
-        // Change language to Polish for this test
+    it('shows Polish as current language in aria-label when i18n language is set to pl', async () => {
         await i18n.changeLanguage('pl');
         const { getByTestId } = render(<LanguageSwitcher />);
         await vi.waitFor(() => {
             const button = getByTestId('language-switcher-button');
             expect(button).toBeInTheDocument();
-            expect(button.query()?.textContent).toContain('Polski');
+            expect(button).toHaveAttribute('aria-label', expect.stringContaining('Polski'));
         });
     });
 });

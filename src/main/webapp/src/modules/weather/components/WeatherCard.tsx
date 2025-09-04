@@ -17,6 +17,7 @@ import type { WeatherSettings } from '../types/types.ts';
 import {
     formatHour,
     getAqiInfo,
+    getOpenWeatherIcon,
     getWeatherIcon,
     getWeatherTextFromCode,
 } from '../utils/weatherUtils.ts';
@@ -74,6 +75,7 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
             if (!weatherService) {
                 return;
             }
+
             try {
                 // Fetch all data in parallel
                 const [weatherForecast, location, airQualityData] = await Promise.all([
@@ -203,7 +205,7 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
                             }}
                         >
                             <Icon
-                                icon={getWeatherIcon(currentConditions.weatherCode || 0)}
+                                icon={getOpenWeatherIcon(currentConditions.weatherCode || 0)}
                                 width={64}
                                 height={64}
                                 color={theme.palette.primary.main}

@@ -12,6 +12,8 @@ const authApi = new AuthApi(configuration, '', api);
 
 export class CalendarService {
     private isAuthenticated = false;
+    // Track whether the user was previously connected but is no longer authenticated
+    private sessionExpired = false;
 
     /**
      * Check if user is authenticated
@@ -31,10 +33,11 @@ export class CalendarService {
      */
     public async initialize(wasConnected: boolean): Promise<void> {
         await this.checkAuthentication();
-        if (wasConnected && !this.isAuthenticated) {
-            // If user was previously connected, but session has expired,
-            // try to re-authenticate. This will trigger a redirect.
-            this.signIn();
+        // Mark session as expired when the app remembers a previous connection but auth is no longer valid
+        this.sessionExpired = Boolean(wasConnected && !this.isAuthenticated);
+        if (this.sessionExpired) {
+            console.log('User was previously connected but session expired. Prompt to re-login.');
+            // Do not redirect automatically; UI should show a prompt and sign-in button instead.
         }
     }
 
@@ -43,6 +46,13 @@ export class CalendarService {
      */
     public isSignedIn(): boolean {
         return this.isAuthenticated;
+    }
+
+    /**
+     * Returns true if the user was previously connected but current session is not authenticated
+     */
+    public hasSessionExpired(): boolean {
+        return this.sessionExpired;
     }
 
     /**
@@ -60,8 +70,8 @@ export class CalendarService {
         try {
             localStorage.removeItem('calendarSettings');
             this.isAuthenticated = false;
+            this.sessionExpired = false;
             window.location.href = '/daily/api/auth/logout';
-            // await authApi.logoutUser();
         } catch (error) {
             console.error('Error during sign out:', error);
         }
@@ -100,55 +110,35 @@ export class CalendarService {
             }
         }
         try {
-            const allEvents: CalendarEvent[] = [];
-            // Fetch events from each selected calendar
-            const promises = calendars.map(async (calendar) => {
-                const calendarId = calendar.id;
-                try {
-                    // Use saved calendar data or default
-                    try {
-                        const response = await calendarApi.getCalendarEvents(calendarId, daysAhead);
-                        if (response.data) {
-                            return response.data.map((event: CalendarEvent) => ({
-                                id: event.id || '',
-                                summary: event.summary || '(No title)',
-                                description: event.description,
-                                start: {
-                                    dateTime: event.start?.dateTime || '',
-                                },
-                                end: {
-                                    dateTime: event.end?.dateTime || '',
-                                },
-                                calendarId: calendarId,
-                                calendarSummary: calendar.summary,
-                                calendarColor: calendar.color || '#039be5',
-                            }));
-                        }
-                    } catch (err) {
-                        console.error(`Error fetching events for calendar ${calendarId}:`, err);
-                    }
-
-                    return [];
-                } catch (err) {
-                    console.error(`Error processing calendar ${calendarId}:`, err);
-                    return [];
+            const calendarIds: string[] = [];
+            const calendarColorMap: Record<string, string> = {};
+            calendars.forEach((calendar) => {
+                calendarIds.push(calendar.id);
+                calendarColorMap[calendar.id] = calendar.color || '#039be5'; // Default color if not provided
+            });
+            try {
+                const response = await calendarApi.getAllCalendarEvents(calendarIds, daysAhead);
+                if (response.data) {
+                    return response.data.map((event: CalendarEvent) => ({
+                        id: event.id || '',
+                        summary: event.summary,
+                        description: event.description,
+                        start: {
+                            dateTime: event.start?.dateTime || '',
+                            date: event.start?.date || '',
+                        },
+                        end: {
+                            dateTime: event.end?.dateTime || '',
+                            date: event.end?.date || '',
+                        },
+                        calendarId: event.calendarId || '',
+                        calendarColor: calendarColorMap[event.calendarId!],
+                    }));
                 }
-            });
-
-            // Wait for all promises, but handle individual calendar failures
-            const results = await Promise.all(promises);
-            results.forEach((events) => {
-                if (Array.isArray(events)) {
-                    allEvents.push(...events);
-                }
-            });
-
-            // Sort all events by date
-            return allEvents.sort((a, b) => {
-                const dateA = a.start?.dateTime ? new Date(a.start.dateTime) : new Date();
-                const dateB = b.start?.dateTime ? new Date(b.start.dateTime) : new Date();
-                return dateA.getTime() - dateB.getTime();
-            });
+            } catch (err) {
+                console.error(`Error fetching events for calendars ${calendarIds}:`, err);
+            }
+            return [];
         } catch (error) {
             console.error('Error fetching events:', error);
             return [];

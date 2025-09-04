@@ -1,20 +1,11 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 // https://vite.dev/config/
 export default defineConfig({
     base: '/daily',
-    plugins: [
-        react(),
-        VitePWA({
-            strategies: 'injectManifest',
-            srcDir: 'src',
-            filename: 'custom-sw.js',
-            manifest: false, // Do not generate a manifest
-        }),
-    ],
+    plugins: [react()],
     resolve: {
         alias: {
             '@api': path.resolve(__dirname, './src/api.ts'),

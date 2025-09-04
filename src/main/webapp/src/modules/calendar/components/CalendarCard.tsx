@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Box,
     Button,
@@ -27,6 +27,7 @@ export const CalendarCard = ({ settings, onSaveSettings }: CalendarCardProps) =>
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [calendarService, setCalendarService] = useState<CalendarService | null>(null);
+    const [sessionExpired, setSessionExpired] = useState(false);
 
     // Create and initialize calendar service
     useEffect(() => {
@@ -40,6 +41,7 @@ export const CalendarCard = ({ settings, onSaveSettings }: CalendarCardProps) =>
                 // Initialize the service
                 await service.initialize(settings.isConnected);
                 setCalendarService(service);
+                setSessionExpired(service.hasSessionExpired());
 
                 if (service.isSignedIn()) {
                     onSaveSettings({
@@ -74,7 +76,8 @@ export const CalendarCard = ({ settings, onSaveSettings }: CalendarCardProps) =>
                 setError(null);
 
                 if (!calendarService.isSignedIn()) {
-                    setError(t('calendar.errors.notSignedIn'));
+                    // Reflect session-expired state in UI and stop here; don't show a generic error
+                    setSessionExpired(calendarService.hasSessionExpired());
                     setLoading(false);
                     return;
                 }
@@ -99,13 +102,83 @@ export const CalendarCard = ({ settings, onSaveSettings }: CalendarCardProps) =>
             await calendarService.signIn();
         }
     };
+    /**
+     * Render a single event
+     * @param event event to be rendered
+     * @param eventIndex index of the event in the list
+     * @param date date string representing the date of the event
+     */
+    const renderEvent = (event: CalendarEvent, eventIndex: number, date: string) => (
+        <Box
+            key={event.id}
+            sx={{
+                display: 'flex',
+                mb: eventIndex < groupedEvents[date].length - 1 ? 1.5 : 0,
+            }}
+        >
+            {/* Color indicator */}
+            <Box
+                sx={{
+                    width: 4,
+                    borderRadius: 1,
+                    bgcolor: event.calendarColor,
+                    mr: 1,
+                    flexShrink: 0,
+                }}
+            />
+            {/* Event details */}
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    textAlign: 'left',
+                }}
+            >
+                <Typography variant='body2' sx={{ fontWeight: 'medium' }}>
+                    {event.summary || t('calendar.noTitle')}
+                </Typography>
+                <Typography variant='caption' color='text.secondary'>
+                    {formatEventTime(event, date)}
+                </Typography>
+            </Box>
+        </Box>
+    );
+    /**
+     * Render events for a specific date
+     * @param date date string in YYYY-MM-DD format
+     * @param dateIndex index of the date in the sorted dates array
+     */
+    const renderDate = (date: string, dateIndex: number) => (
+        <Box key={date}>
+            {dateIndex > 0 && <Divider sx={{ my: 1 }} />}
+            <Grid container spacing={1}>
+                {/* Date column */}
+                <Grid size={{ xs: 2 }}>
+                    <Typography
+                        variant='subtitle1'
+                        fontWeight={isToday(date) ? 'bold' : 'normal'}
+                        color={isToday(date) ? 'primary' : 'inherit'}
+                    >
+                        {formatDate(date)}
+                    </Typography>
+                </Grid>
+
+                {/* Events column */}
+                <Grid size={{ xs: 10 }}>
+                    {groupedEvents[date].map((event, eventIndex) =>
+                        renderEvent(event, eventIndex, date),
+                    )}
+                </Grid>
+            </Grid>
+        </Box>
+    );
 
     const groupedEvents = groupEventsByDate(events);
     const sortedDates = Object.keys(groupedEvents).sort(
         (a, b) => new Date(a).getTime() - new Date(b).getTime(),
     );
-
-    if (!settings.isConnected) {
+    if (!settings.isConnected || sessionExpired) {
         return (
             <Card
                 variant='outlined'
@@ -130,7 +203,9 @@ export const CalendarCard = ({ settings, onSaveSettings }: CalendarCardProps) =>
                         }}
                     >
                         <Typography variant='body1' textAlign='center' gutterBottom>
-                            {t('calendar.connectPrompt')}
+                            {sessionExpired
+                                ? t('calendar.errors.sessionExpired')
+                                : t('calendar.connectPrompt')}
                         </Typography>
                         <Button variant='contained' color='primary' onClick={handleSignIn}>
                             {t('calendar.settings.signInWithGoogle')}
@@ -138,6 +213,34 @@ export const CalendarCard = ({ settings, onSaveSettings }: CalendarCardProps) =>
                     </Box>
                 </CardContent>
             </Card>
+        );
+    }
+    let content: React.JSX.Element | null;
+    if (loading) {
+        content = (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+            </Box>
+        );
+    } else if (error) {
+        content = <Typography color='error'>{error}</Typography>;
+    } else if (!settings.selectedCalendars || settings.selectedCalendars.length === 0) {
+        content = (
+            <Typography variant='body1' sx={{ py: 2 }}>
+                {t('calendar.noCalendars')}
+            </Typography>
+        );
+    } else if (events.length === 0) {
+        content = (
+            <Typography variant='body1' sx={{ py: 2 }}>
+                {t('calendar.noEvents')}
+            </Typography>
+        );
+    } else {
+        content = (
+            <Box sx={{ mt: 1 }}>
+                {sortedDates.map((date, dateIndex) => renderDate(date, dateIndex))}
+            </Box>
         );
     }
 
@@ -164,86 +267,7 @@ export const CalendarCard = ({ settings, onSaveSettings }: CalendarCardProps) =>
                         calendarService={calendarService}
                     />
                 </Box>
-                {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                        <CircularProgress />
-                    </Box>
-                ) : error ? (
-                    <Typography color='error'>{error}</Typography>
-                ) : events.length === 0 ? (
-                    <Typography variant='body1' sx={{ py: 2 }}>
-                        {t('calendar.noEvents')}
-                    </Typography>
-                ) : (
-                    <Box sx={{ mt: 1 }}>
-                        {sortedDates.map((date, dateIndex) => (
-                            <Box key={date}>
-                                {dateIndex > 0 && <Divider sx={{ my: 1 }} />}
-                                <Grid container spacing={1}>
-                                    {/* Date column */}
-                                    <Grid size={{ xs: 2 }}>
-                                        <Typography
-                                            variant='subtitle1'
-                                            fontWeight={isToday(date) ? 'bold' : 'normal'}
-                                            color={isToday(date) ? 'primary' : 'inherit'}
-                                        >
-                                            {formatDate(date)}
-                                        </Typography>
-                                    </Grid>
-
-                                    {/* Events column */}
-                                    <Grid size={{ xs: 10 }}>
-                                        {groupedEvents[date].map((event, eventIndex) => (
-                                            <Box
-                                                key={event.id}
-                                                sx={{
-                                                    display: 'flex',
-                                                    mb:
-                                                        eventIndex < groupedEvents[date].length - 1
-                                                            ? 1.5
-                                                            : 0,
-                                                }}
-                                            >
-                                                {/* Color indicator */}
-                                                <Box
-                                                    sx={{
-                                                        width: 4,
-                                                        borderRadius: 1,
-                                                        bgcolor: event.calendarColor,
-                                                        mr: 1,
-                                                        flexShrink: 0,
-                                                    }}
-                                                />
-                                                {/* Event details */}
-                                                <Box
-                                                    sx={{
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        alignItems: 'flex-start',
-                                                        textAlign: 'left',
-                                                    }}
-                                                >
-                                                    <Typography
-                                                        variant='body2'
-                                                        sx={{ fontWeight: 'medium' }}
-                                                    >
-                                                        {event.summary}
-                                                    </Typography>
-                                                    <Typography
-                                                        variant='caption'
-                                                        color='text.secondary'
-                                                    >
-                                                        {formatEventTime(event, date)}
-                                                    </Typography>
-                                                </Box>
-                                            </Box>
-                                        ))}
-                                    </Grid>
-                                </Grid>
-                            </Box>
-                        ))}
-                    </Box>
-                )}
+                {content}
             </CardContent>
         </Card>
     );

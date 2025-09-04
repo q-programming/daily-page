@@ -5,12 +5,13 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.4</version>
+		<version>2.7.18</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>pl.qprogramming</groupId>
 	<artifactId>daily</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
+	<packaging>${packaging.type}</packaging>
 	<name>daily</name>
 	<description>daily page supporting api</description>
 	<url/>
@@ -26,17 +27,45 @@
 		<tag/>
 		<url/>
 	</scm>
+
+	<!-- Define profiles for jar or war packaging -->
+	<profiles>
+		<profile>
+			<id>jar</id>
+			<properties>
+				<packaging.type>jar</packaging.type>
+			</properties>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+		</profile>
+		<profile>
+			<id>war</id>
+			<properties>
+				<packaging.type>war</packaging.type>
+			</properties>
+		</profile>
+	</profiles>
+
 	<properties>
-		<java.version>20</java.version>
-		<node.version>v20.11.1</node.version>
-		<npm.version>10.2.4</npm.version>
-		<frontend-maven-plugin.version>1.15.0</frontend-maven-plugin.version>
+		<java.version>11</java.version>
+        <node.version>v20.11.1</node.version>
+        <npm.version>10.2.4</npm.version>
+		<frontend-maven-plugin.version>1.12.1</frontend-maven-plugin.version>
 		<lombok.version>1.18.24</lombok.version>
+		<packaging.type>jar</packaging.type> <!-- Default packaging type -->
 	</properties>
 	<dependencies>
+		<!-- Spring Boot Starter Dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<!-- Tomcat provided at runtime by the servlet container when deployed as WAR -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-tomcat</artifactId>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -52,22 +81,33 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-oauth2-client</artifactId>
 		</dependency>
+		<!-- JDBC for persisting OAuth2 authorized clients (refresh tokens) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-jdbc</artifactId>
+		</dependency>
+		<!-- H2 file database to store authorized clients -->
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>runtime</scope>
+		</dependency>
 		<!-- Google API Client for Calendar integration -->
 		<dependency>
 			<groupId>com.google.api-client</groupId>
 			<artifactId>google-api-client</artifactId>
-			<version>2.3.0</version>
+			<version>2.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.apis</groupId>
 			<artifactId>google-api-services-calendar</artifactId>
-			<version>v3-rev20230825-2.0.0</version>
+			<version>v3-rev20220715-2.0.0</version>
 		</dependency>
 		<!-- Google Auth Library -->
 		<dependency>
 			<groupId>com.google.auth</groupId>
 			<artifactId>google-auth-library-oauth2-http</artifactId>
-			<version>1.23.0</version>
+			<version>1.12.1</version>
 		</dependency>
 		<!-- Spring Boot Cache -->
 		<dependency>
@@ -81,8 +121,8 @@
 		</dependency>
         <dependency>
             <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.5.0</version>
+            <artifactId>springdoc-openapi-ui</artifactId>
+            <version>1.7.0</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -92,7 +132,7 @@
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
-            <version>1.5.5.Final</version>
+            <version>1.5.3.Final</version>
         </dependency>
         <!-- Jackson Nullable for OpenAPI generated code -->
         <dependency>
@@ -113,11 +153,14 @@
 	</dependencies>
 
 	<build>
+		<finalName>${project.artifactId}</finalName>
 		<plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
@@ -127,7 +170,7 @@
                         <path>
                             <groupId>org.mapstruct</groupId>
                             <artifactId>mapstruct-processor</artifactId>
-                            <version>1.5.5.Final</version>
+                            <version>1.5.3.Final</version>
                         </path>
                         <!-- Ensures lombok and mapstruct work together -->
                         <path>
@@ -144,6 +187,14 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
 			</plugin>
             <!-- Frontend build with Maven -->
             <plugin>
@@ -211,10 +262,52 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- War plugin configuration to exclude node_modules and other frontend artifacts -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                    <packagingExcludes>
+                        WEB-INF/classes/node_modules/**,
+                        WEB-INF/classes/src/**,
+                        WEB-INF/classes/client-api/**,
+                        WEB-INF/classes/public/**,
+                        WEB-INF/classes/*.js,
+                        WEB-INF/classes/*.json,
+                        WEB-INF/classes/*.ts,
+                        WEB-INF/classes/*.mjs,
+                        WEB-INF/lib/node_modules/**,
+                        **/node/**,
+                        **/node_modules/**,
+                        **/*.ts,
+                        **/*.tsx,
+                        **/*.json,
+                        **/*.js.map,
+                        **/.vite/**
+                    </packagingExcludes>
+                    <warSourceExcludes>
+                        dist/**,
+                        client-api/**,
+                        node_modules/**,
+                        public/**,
+                        src/**,
+                        *.json,
+                        *.js,
+                        *.ts,
+                        *.mjs
+                    </warSourceExcludes>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>7.5.0</version>
+                <version>6.6.0</version>
                 <executions>
                     <execution>
                         <id>generate-server</id>
@@ -229,7 +322,7 @@
                             <supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
                             <skipValidateSpec>true</skipValidateSpec>
                             <configOptions>
-                                <useSpringBoot3>true</useSpringBoot3>
+                                <useSpringBoot3>false</useSpringBoot3>
                                 <delegatePattern>true</delegatePattern>
                                 <title>daily</title>
                                 <serializableModel>true</serializableModel>
