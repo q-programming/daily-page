@@ -133,10 +133,17 @@ export const getAccuWeatherIcon = (weatherCode: number, datetime?: string): stri
 };
 
 // Get weather description text from Open-Meteo WMO weather code
-export const getWeatherTextFromCode = (weatherCode: number): string => {
-    // Use i18n to get the translated weather status
-    return i18n.t(`weather.status.${weatherCode}`, {
-        defaultValue: i18n.t('weather.status.unknown'),
+export const getWeatherTextFromCode = (weatherCode: number, provider?: WeatherProvider): string => {
+    // Decide which translation namespace to use based on provider
+    if (provider === WeatherProvider.Accuweather) {
+        return i18n.t(`weather.accuStatus.${weatherCode}`, {
+            defaultValue: i18n.t('weather.openStatus.unknown'),
+        });
+    }
+
+    // Default to Open-Meteo WMO codes
+    return i18n.t(`weather.openStatus.${weatherCode}`, {
+        defaultValue: i18n.t('weather.openStatus.unknown'),
     });
 };
 

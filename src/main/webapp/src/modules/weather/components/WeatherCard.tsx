@@ -13,11 +13,11 @@ import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
 import { WeatherService } from '../service/weatherService.ts';
 import type { AirQualityData, CurrentWeather, HourlyForecast, Location } from '@api';
+import type { WeatherProvider } from '@api';
 import type { WeatherSettings } from '../types/types.ts';
 import {
     formatHour,
     getAqiInfo,
-    getOpenWeatherIcon,
     getWeatherIcon,
     getWeatherTextFromCode,
 } from '../utils/weatherUtils.ts';
@@ -43,6 +43,7 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
         max: number;
     } | null>(null);
     const [weatherService, setWeatherService] = useState<WeatherService | null>(null);
+    const [provider, setProvider] = useState<WeatherProvider | undefined>(undefined);
 
     // Create and initialize weather service
     useEffect(() => {
@@ -87,6 +88,7 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
                 setHourlyForecast(weatherForecast?.hourly);
                 setLocationData(location);
                 setAirQuality(airQualityData);
+                setProvider(weatherForecast?.provider);
 
                 // Get min/max from daily forecast
                 if (weatherForecast?.forecast && weatherForecast.forecast.length > 0) {
@@ -205,13 +207,16 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
                             }}
                         >
                             <Icon
-                                icon={getOpenWeatherIcon(currentConditions.weatherCode || 0)}
+                                icon={getWeatherIcon(currentConditions.weatherCode || 0, provider)}
                                 width={64}
                                 height={64}
                                 color={theme.palette.primary.main}
                             />
                             <Typography variant='h6' sx={{ mt: 1 }}>
-                                {getWeatherTextFromCode(currentConditions.weatherCode || 0)}
+                                {getWeatherTextFromCode(
+                                    currentConditions.weatherCode || 0,
+                                    provider,
+                                )}
                             </Typography>
                             <Typography variant='body2' color='text.secondary'>
                                 {locationData.name}, {locationData.country}
@@ -257,7 +262,11 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
                                 }}
                             >
                                 <Icon
-                                    icon={getWeatherIcon(hour.weatherCode || 0)}
+                                    icon={getWeatherIcon(
+                                        hour.weatherCode || 0,
+                                        provider,
+                                        hour.time,
+                                    )}
                                     width={24}
                                     height={24}
                                     color={theme.palette.primary.main}
