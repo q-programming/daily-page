@@ -48,7 +48,7 @@ export const WeatherCard = ({ settings }: WeatherCardProps) => {
     // Create and initialize weather service
     useEffect(() => {
         const initWeatherService = async () => {
-            if (!settings.city) {
+            if (!settings.city || !settings.provider) {
                 setWarn('weather.cityRequired');
                 return;
             }

@@ -30,14 +30,15 @@ public class CacheConfig {
      */
     public static class CacheNames {
         // Weather caches - 1 hour expiration
-        public static final String GEOCODING = "geocoding";
-        public static final String CURRENT_WEATHER = "currentWeather";
-        public static final String FORECAST = "forecast";
-        public static final String AIR_QUALITY = "airQuality";
+        public static final String GEOCODING_CACHE = "geocoding";
+        public static final String ACCU_GEOCODING_CACHE = "accu_geocoding";
+        public static final String FORECAST_CACHE = "forecast";
+        public static final String ACCU_FORECAST_CACHE = "accu_forecast";
+        public static final String AIR_QUALITY_CACHE = "airQuality";
 
         // Calendar caches - 5 minutes expiration
-        public static final String CALENDAR_LIST = "calendarList";
-        public static final String CALENDAR_EVENTS = "calendarEvents";
+        public static final String CALENDAR_LIST_CACHE = "calendarList";
+        public static final String CALENDAR_EVENTS_CACHE = "calendarEvents";
 
         private CacheNames() {
             // Prevent instantiation
@@ -54,10 +55,11 @@ public class CacheConfig {
     public CacheManager cacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager();
         cacheManager.setCacheNames(Arrays.asList(
-                CacheNames.GEOCODING,
-                CacheNames.CURRENT_WEATHER,
-                CacheNames.FORECAST,
-                CacheNames.AIR_QUALITY
+                CacheNames.GEOCODING_CACHE,
+                CacheNames.ACCU_GEOCODING_CACHE,
+                CacheNames.FORECAST_CACHE,
+                CacheNames.ACCU_FORECAST_CACHE,
+                CacheNames.AIR_QUALITY_CACHE
         ));
         cacheManager.setCaffeine(Caffeine.newBuilder()
                 .expireAfterWrite(1, TimeUnit.HOURS)
@@ -75,8 +77,8 @@ public class CacheConfig {
     public CacheManager calendarCacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager();
         cacheManager.setCacheNames(Arrays.asList(
-                CacheNames.CALENDAR_LIST,
-                CacheNames.CALENDAR_EVENTS
+                CacheNames.CALENDAR_LIST_CACHE,
+                CacheNames.CALENDAR_EVENTS_CACHE
         ));
         cacheManager.setCaffeine(Caffeine.newBuilder()
                 .expireAfterWrite(5, TimeUnit.MINUTES)

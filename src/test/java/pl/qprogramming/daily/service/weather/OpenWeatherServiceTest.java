@@ -24,7 +24,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static pl.qprogramming.daily.service.weather.WeatherConstants.*;
+import static pl.qprogramming.daily.service.weather.WeatherConstants.OPEN_METEO_AIR_QUALITY_URL;
+import static pl.qprogramming.daily.service.weather.WeatherConstants.OPEN_METEO_FORECAST_URL;
 
 @ExtendWith(MockitoExtension.class)
 class OpenWeatherServiceTest {
@@ -46,10 +47,8 @@ class OpenWeatherServiceTest {
     private OpenWeatherService openWeatherService;
 
     private ObjectMapper objectMapper;
-    private OpenMeteoWeatherResponse currentWeatherResponse;
     private OpenMeteoWeatherResponse forecastResponse;
     private OpenMeteoAirQuality airQualityResponse;
-    private WeatherData weatherData;
     private WeatherForecast weatherForecast;
     private AirQualityData airQualityData;
 
@@ -58,11 +57,7 @@ class OpenWeatherServiceTest {
         objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        // Load test data from JSON files
 
-        currentWeatherResponse = objectMapper.readValue(
-                new ClassPathResource("weather/current_weather.json").getInputStream(),
-                OpenMeteoWeatherResponse.class);
 
         forecastResponse = objectMapper.readValue(
                 new ClassPathResource("weather/weather_forecast.json").getInputStream(),
@@ -80,11 +75,6 @@ class OpenWeatherServiceTest {
                 .weatherCode(1)
                 .windSpeed(15.2)
                 .humidity(65);
-
-        // Set up WeatherData object
-        weatherData = new WeatherData()
-                .current(currentWeather)
-                .location(new Location().lat(TEST_LATITUDE).lon(TEST_LONGITUDE));
 
         // Set up WeatherForecast object
         List<Forecast> forecasts = new ArrayList<>();
@@ -114,65 +104,6 @@ class OpenWeatherServiceTest {
 
         // Replace the injected RestTemplate with our mock
         ReflectionTestUtils.setField(openWeatherService, "restTemplate", restTemplate);
-    }
-
-
-
-    @Test
-    void getCurrentWeather_Success() {
-        // Setup mocks
-        when(restTemplate.getForObject(contains(OPEN_METEO_FORECAST_URL), eq(OpenMeteoWeatherResponse.class)))
-                .thenReturn(currentWeatherResponse);
-        when(weatherMapper.toWeatherData(any())).thenReturn(weatherData);
-
-        // Execute test
-        WeatherData result = openWeatherService.getCurrentWeather(TEST_LATITUDE, TEST_LONGITUDE);
-
-        // Verify results
-        assertNotNull(result);
-        assertNotNull(result.getCurrent());
-        assertEquals(22.5, result.getCurrent().getTemperature());
-        assertEquals(1, result.getCurrent().getWeatherCode());
-        assertEquals(15.2, result.getCurrent().getWindSpeed());
-        assertEquals(65, result.getCurrent().getHumidity());
-
-        // Verify interactions
-        verify(restTemplate).getForObject(contains(OPEN_METEO_FORECAST_URL), eq(OpenMeteoWeatherResponse.class));
-        verify(weatherMapper).toWeatherData(currentWeatherResponse);
-    }
-
-    @Test
-    void getCurrentWeather_ApiError() {
-        // Setup mocks to simulate API error
-        when(restTemplate.getForObject(contains(OPEN_METEO_FORECAST_URL), eq(OpenMeteoWeatherResponse.class)))
-                .thenThrow(new RuntimeException("API Error"));
-
-        // Execute test
-        WeatherData result = openWeatherService.getCurrentWeather(TEST_LATITUDE, TEST_LONGITUDE);
-
-        // Verify result is null due to error
-        assertNull(result);
-
-        // Verify interactions
-        verify(restTemplate).getForObject(contains(OPEN_METEO_FORECAST_URL), eq(OpenMeteoWeatherResponse.class));
-        verifyNoInteractions(weatherMapper);
-    }
-
-    @Test
-    void getCurrentWeather_NullResponse() {
-        // Setup mocks to return null response
-        when(restTemplate.getForObject(contains(OPEN_METEO_FORECAST_URL), eq(OpenMeteoWeatherResponse.class)))
-                .thenReturn(null);
-
-        // Execute test
-        WeatherData result = openWeatherService.getCurrentWeather(TEST_LATITUDE, TEST_LONGITUDE);
-
-        // Verify result is null due to null response
-        assertNull(result);
-
-        // Verify interactions
-        verify(restTemplate).getForObject(contains(OPEN_METEO_FORECAST_URL), eq(OpenMeteoWeatherResponse.class));
-        verifyNoInteractions(weatherMapper);
     }
 
     @Test

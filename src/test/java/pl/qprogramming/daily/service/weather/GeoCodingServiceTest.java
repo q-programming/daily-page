@@ -70,7 +70,7 @@ class GeoCodingServiceTest {
         // Setup mocks
         when(restTemplate.getForObject(contains(OPEN_METEO_GEOCODING_URL), eq(GeocodingResponse.class)))
                 .thenReturn(geocodingResponse);
-        when(geoCodingMapper.toGeocodingResponse(any())).thenReturn(geocodingResult);
+        when(geoCodingMapper.toGeocodingResponse(any(GeocodingResponse.GeocodingResult.class))).thenReturn(geocodingResult);
 
         // Execute test
         GeocodingResult result = geoCodingService.geocodeLocation(TEST_CITY, TEST_LANGUAGE, TEST_COUNT);
@@ -84,7 +84,7 @@ class GeoCodingServiceTest {
 
         // Verify interactions
         verify(restTemplate).getForObject(contains(OPEN_METEO_GEOCODING_URL), eq(GeocodingResponse.class));
-        verify(geoCodingMapper).toGeocodingResponse(any());
+        verify(geoCodingMapper).toGeocodingResponse(any(GeocodingResponse.GeocodingResult.class));
     }
 
     @Test

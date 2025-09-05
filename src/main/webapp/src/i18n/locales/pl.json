@@ -11,7 +11,7 @@
     "windSpeed": "Prędkość Wiatru",
     "airQuality": "Jakość Powietrza",
     "error": "Błąd",
-    "cityRequired": "Miasto jest wymagane. Proszę dodać je w ustawieniach.",
+    "cityRequired": "Wybierz proszę miasto i dostawcę pogody w ustawieniach.",
     "fetchError": "Nie udało się pobrać danych pogodowych. Spróbuj ponownie póżniej.",
     "errorInit": "Nie udało się zainicjalizować usługi pogodowej. Sprawdź nazwę miasta i spróbuj ponownie.",
     "noData": "Brak dostępnych danych pogodowych.",
@@ -108,6 +108,8 @@
     "cityDescription": "Ustaw swoje miasto dla danych pogodowych.",
     "cityPlaceholder": "np., Warszawa",
     "cityHelp": "Opcjonalnie: Pozostaw puste, aby użyć lokalizacji urządzenia",
+    "providerLabel": "Dostawca danych pogody",
+    "providerDescription": "Wybierz preferowanego dostawcę danych pogodowych.",
     "cancel": "Anuluj",
     "save": "Zapisz"
   },

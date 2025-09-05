@@ -11,7 +11,7 @@
     "windSpeed": "Wind Speed",
     "airQuality": "Air Quality",
     "error": "Error",
-    "cityRequired": "City is required. Please add it in settings.",
+    "cityRequired": "Please select city and weather provider in settings.",
     "fetchError": "Failed to fetch weather data. Please try again later.",
     "errorInit": "Failed to initialize weather service. Please check your city name and try again.",
     "noData": "No weather data available.",
@@ -107,7 +107,8 @@
     "cityDescription": "Set your city for weather data.",
     "cityLabel": "Your City",
     "cityPlaceholder": "e.g., London",
-    "cityHelp": "Optional: Leave blank to use device location",
+    "providerLabel": "Weather data provider",
+    "providerDescription": "Select your preferred weather data provider.",
     "cancel": "Cancel",
     "save": "Save"
   },

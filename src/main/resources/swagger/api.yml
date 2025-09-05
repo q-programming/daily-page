@@ -11,45 +11,12 @@ info:
 servers:
   - url: '/api'
 paths:
-  /weather/current:
+  /weather/open/forecast:
     get:
       tags:
         - weather
-      description: Get current weather for a location
-      operationId: getCurrentWeather
-      parameters:
-        - name: lat
-          in: query
-          description: Latitude coordinate
-          required: true
-          schema:
-            type: number
-            format: double
-        - name: lon
-          in: query
-          description: Longitude coordinate
-          required: true
-          schema:
-            type: number
-            format: double
-      responses:
-        200:
-          description: Current weather data
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WeatherData'
-        400:
-          description: Bad request - invalid coordinates
-        500:
-          description: Server error
-
-  /weather/forecast:
-    get:
-      tags:
-        - weather
-      description: Get weather forecast for a location
-      operationId: getWeatherForecast
+      description: Get weather forecast for a location from Open Geo Weather
+      operationId: getOpenWeatherForecast
       parameters:
         - name: lat
           in: query
@@ -90,7 +57,44 @@ paths:
           description: Bad request - invalid parameters
         500:
           description: Server error
-
+  /weather/accu/forecast:
+    get:
+      tags:
+        - weather
+      description: Get weather forecast for a location
+      operationId: getAccuWeatherForecast
+      parameters:
+        - name: locationKey
+          in: query
+          description: Location key for AccuWeather
+          required: true
+          schema:
+            type: number
+        - name: days
+          in: query
+          description: Number of days for forecast
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: hours
+          in: query
+          description: Number of hours for forecast
+          required: false
+          schema:
+            type: integer
+            default: 24
+      responses:
+        200:
+          description: Weather forecast data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeatherForecast'
+        400:
+          description: Bad request - invalid parameters
+        500:
+          description: Server error
   /weather/air-quality:
     get:
       tags:
@@ -142,6 +146,12 @@ paths:
           required: false
           schema:
             type: string
+        - name: provider
+          in: query
+          description: Weather provider for location key (if using AccuWeather)
+          required: false
+          schema:
+            $ref: '#/components/schemas/WeatherProvider'
         - name: count
           in: query
           description: Maximum number of results to return
@@ -368,6 +378,8 @@ components:
         lon:
           type: number
           format: double
+        locationKey:
+          type: string
 
     UserInfo:
       type: object
@@ -516,9 +528,12 @@ components:
         area:
           type: number
           format: double
+        locationKey:
+          type: string
     WeatherProvider:
       type: string
       enum: [openweather,accuweather]
+      default: openweather
 
   securitySchemes:
     oauth2:

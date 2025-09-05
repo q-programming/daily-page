@@ -13,6 +13,7 @@ import pl.qprogramming.daily.service.weather.mapper.WeatherMapper;
 import pl.qprogramming.daily.service.weather.model.openweather.OpenMeteoAirQuality;
 import pl.qprogramming.daily.service.weather.model.openweather.OpenMeteoWeatherResponse;
 
+import static pl.qprogramming.daily.config.CacheConfig.CacheNames.*;
 import static pl.qprogramming.daily.service.weather.WeatherConstants.*;
 
 /**
@@ -43,44 +44,6 @@ public class OpenWeatherService {
     public OpenWeatherService(WeatherMapper weatherMapper) {
         this.restTemplate = new RestTemplate();
         this.weatherMapper = weatherMapper;
-    }
-
-
-
-    /**
-     * Gets current weather data for a geographic location.
-     * <p>
-     * This method retrieves the current weather conditions for the specified
-     * coordinates by calling the Open-Meteo Forecast API. The data includes
-     * temperature, weather code, wind speed, and humidity. Results are cached
-     * to reduce API calls.
-     * </p>
-     *
-     * @param latitude Latitude of the location
-     * @param longitude Longitude of the location
-     * @return WeatherData containing current weather conditions or null if error occurs
-     */
-    @Cacheable(value = CURRENT_WEATHER_CACHE, key = "#latitude + '-' + #longitude")
-    public WeatherData getCurrentWeather(double latitude, double longitude) {
-        try {
-            String url = UriComponentsBuilder.fromUriString(OPEN_METEO_FORECAST_URL)
-                    .queryParam(PARAM_LATITUDE, latitude)
-                    .queryParam(PARAM_LONGITUDE, longitude)
-                    .queryParam(PARAM_CURRENT, CURRENT_WEATHER_PARAMS)
-                    .queryParam(PARAM_TIMEZONE, TIMEZONE_AUTO)
-                    .encode()
-                    .toUriString();
-
-            val response = restTemplate.getForObject(url, OpenMeteoWeatherResponse.class);
-            log.debug("Response from Open-Meteo Current Weather API: {}", response);
-            if (response == null || response.getCurrent() == null) {
-                return null;
-            }
-            return weatherMapper.toWeatherData(response);
-        } catch (Exception e) {
-            log.error("Error fetching current weather for lat: {}, lon: {}: {}", latitude, longitude, e.getMessage());
-            return null;
-        }
     }
 
     /**

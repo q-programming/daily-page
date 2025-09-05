@@ -5,10 +5,15 @@ import lombok.val;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+import pl.qprogramming.daily.config.AccuWeatherConfig;
 import pl.qprogramming.daily.dto.GeocodingResult;
 import pl.qprogramming.daily.service.weather.mapper.GeoCodingMapper;
 import pl.qprogramming.daily.service.weather.model.GeocodingResponse;
+import pl.qprogramming.daily.service.weather.model.accuweather.AccuWeatherLocation;
 
+import static pl.qprogramming.daily.config.CacheConfig.CacheNames.ACCU_GEOCODING_CACHE;
+import static pl.qprogramming.daily.config.CacheConfig.CacheNames.GEOCODING_CACHE;
 import static pl.qprogramming.daily.service.weather.WeatherConstants.*;
 
 @Slf4j
@@ -17,8 +22,10 @@ public class GeoCodingService {
 
     private final RestTemplate restTemplate;
     private final GeoCodingMapper geoCodingMapper;
+    private final AccuWeatherConfig config;
 
-    public GeoCodingService(GeoCodingMapper goecodingMapper) {
+    public GeoCodingService(GeoCodingMapper goecodingMapper, AccuWeatherConfig config) {
+        this.config = config;
         this.restTemplate = new RestTemplate();
         this.geoCodingMapper = goecodingMapper;
     }
@@ -54,6 +61,55 @@ public class GeoCodingService {
             return null;
         } catch (Exception e) {
             log.error("Error geocoding location '{}': {}", cityName, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Gets the location (including key) by city name using AccuWeather city search API.
+     * AccuWeather returns an array of locations, we take the first one.
+     */
+    @Cacheable(value = ACCU_GEOCODING_CACHE, key = "#cityName + '-' + #language")
+    public GeocodingResult getAccuLocationKey(String cityName, String language) {
+        try {
+            String url = UriComponentsBuilder.fromUriString(ACCU_WEATHER_CITY_SEARCH_URL)
+                    .queryParam("apikey", config.getApiKey())
+                    .queryParam("q", cityName)
+                    .queryParam("language", language != null ? language : DEFAULT_LANGUAGE)
+                    .encode()
+                    .toUriString();
+
+            log.debug("Requesting location key from AccuWeather for city: {}", cityName);
+            val response = restTemplate.getForObject(url, AccuWeatherLocation[].class);
+            if (response != null && response.length > 0) {
+                return geoCodingMapper.toGeocodingResponse(response[0]);
+            }
+            return null;
+        } catch (Exception e) {
+            log.error("Error fetching location key from AccuWeather for city '{}': {}", cityName, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Retrieves location details by location key.
+     * @deprecated don't use as it drains api usage quota very fast
+     */
+    @Cacheable(value = "accuweatherLocationDetails", key = "#locationKey + '-' + #language")
+    public AccuWeatherLocation getAccuLocationDetails(String locationKey, String language) {
+        try {
+            String url = UriComponentsBuilder.fromUriString(ACCU_WEATHER_CURRENT_CONDITIONS_URL)
+                    // go up to base host and use locations details endpoint
+                    .replacePath("/locations/v1/" + locationKey)
+                    .queryParam("apikey", config.getApiKey())
+                    .queryParam("language", language != null ? language : DEFAULT_LANGUAGE)
+                    .encode()
+                    .toUriString();
+
+            log.debug("Requesting location details from AccuWeather for key: {}", locationKey);
+            return restTemplate.getForObject(url, AccuWeatherLocation.class);
+        } catch (Exception e) {
+            log.error("Error fetching location details from AccuWeather for key {}: {}", locationKey, e.getMessage());
             return null;
         }
     }

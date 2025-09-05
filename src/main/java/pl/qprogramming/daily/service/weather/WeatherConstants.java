@@ -23,13 +23,7 @@ public class WeatherConstants {
     public static final String ACCU_WEATHER_CURRENT_CONDITIONS_URL = "http://dataservice.accuweather.com/currentconditions/v1";
     public static final String ACCU_WEATHER_FORECAST_URL = "http://dataservice.accuweather.com/forecasts/v1/daily/5day";
     public static final String ACCU_WEATHER_HOURLY_FORECAST_URL = "http://dataservice.accuweather.com/forecasts/v1/hourly/12hour";
-
-    // Cache configuration
-    public static final long CACHE_DURATION = 60 * 60 * 1000; // 1 hour
-    public static final String GEOCODING_CACHE = "geocoding";
-    public static final String CURRENT_WEATHER_CACHE = "currentWeather";
-    public static final String FORECAST_CACHE = "forecast";
-    public static final String AIR_QUALITY_CACHE = "airQuality";
+    public static final String ACCU_WEATHER_CITY_SEARCH_URL = "http://dataservice.accuweather.com/locations/v1/cities/search";
 
     // Geocoding parameters
     public static final String PARAM_NAME = "name";

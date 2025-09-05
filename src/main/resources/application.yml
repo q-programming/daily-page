@@ -44,9 +44,6 @@ server:
         secure: true         #  serving over HTTPS
   port: 8080
 
-# Weather Provider Configuration
-weather:
-  provider: accuweather  # Options: openmeteo, accuweather
 
 # AccuWeather API Configuration
 accuweather:

@@ -101,7 +101,7 @@ describe('WeatherService', () => {
             mock.resetHistory();
             mock.onGet(/\/daily\/api\/weather\/forecast/).reply(200, mockWeatherForecast);
             // Call a method that uses the coordinates internally
-            await weatherService.getWeatherForecast();
+            await weatherService.getOpenWeatherForecast();
             // Verify that the correct URL with coordinates was called
             const weatherCall = mock.history.get.find((call) =>
                 call.url?.includes('/daily/api/weather/forecast'),
@@ -122,7 +122,7 @@ describe('WeatherService', () => {
         it('getWeatherForecast should return hourly forecast data', async () => {
             mock.resetHistory();
             // Call the method
-            const weatherForecast = await weatherService.getWeatherForecast();
+            const weatherForecast = await weatherService.getOpenWeatherForecast();
             // Assert
             expect(weatherForecast).not.toBeNull();
             expect(weatherForecast?.forecast?.length).toBeGreaterThan(0);

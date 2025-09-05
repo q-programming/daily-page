@@ -1,18 +1,24 @@
 import { useState } from 'react';
 import {
     Box,
-    TextField,
     Button,
     Dialog,
-    DialogTitle,
-    DialogContent,
     DialogActions,
-    Typography,
+    DialogContent,
+    DialogTitle,
     IconButton,
+    TextField,
+    Typography,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
 } from '@mui/material';
 import type { WeatherSettings } from '../types/types.ts';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useTranslation } from 'react-i18next';
+import type { WeatherProvider } from '@api';
+import { WeatherProvider as WeatherProviders } from '@api';
 
 interface WeatherSettingsProps {
     settings: WeatherSettings;
@@ -23,6 +29,7 @@ export const WeatherSettingsDialog = ({ settings, onSaveSettings }: WeatherSetti
     const { t } = useTranslation();
     const [open, setOpen] = useState(!settings.city);
     const [city, setCity] = useState(settings.city || '');
+    const [provider, setProvider] = useState<WeatherProvider | undefined>(settings.provider);
 
     const handleOpen = () => {
         setOpen(true);
@@ -30,9 +37,11 @@ export const WeatherSettingsDialog = ({ settings, onSaveSettings }: WeatherSetti
     const handleClose = () => {
         setOpen(false);
     };
+
     const handleSave = async () => {
         onSaveSettings({
             city: city.trim() || undefined,
+            provider: provider || undefined,
         });
         handleClose();
     };
@@ -71,6 +80,36 @@ export const WeatherSettingsDialog = ({ settings, onSaveSettings }: WeatherSetti
                             required
                             data-testid='weather-settings-city'
                         />
+                    </Box>
+                    <Box sx={{ pt: 1 }}>
+                        <Typography variant='body2' color='text.secondary' paragraph>
+                            {t('settings.providerLabel')}
+                        </Typography>
+                        <FormControl fullWidth margin='normal'>
+                            <InputLabel id='weather-provider-label'>
+                                {t('settings.providerLabel')}
+                            </InputLabel>
+                            <Select
+                                labelId='weather-provider-label'
+                                id='weather-provider-select'
+                                value={provider ?? ''}
+                                label={t('settings.providerLabel')}
+                                onChange={(e) =>
+                                    setProvider(
+                                        (e.target.value || undefined) as
+                                            | WeatherProvider
+                                            | undefined,
+                                    )
+                                }
+                                data-testid='weather-settings-provider'
+                            >
+                                {Object.values(WeatherProviders).map((p) => (
+                                    <MenuItem key={p} value={p}>
+                                        {p}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
                     </Box>
                 </DialogContent>
                 <DialogActions>

@@ -114,7 +114,7 @@ public class CalendarService {
      * @throws GeneralSecurityException If there's a security-related error
      * @throws IOException              If there's an I/O error during the API call
      */
-    @Cacheable(value = CacheNames.CALENDAR_LIST, key = "#accessToken", cacheManager = "calendarCacheManager")
+    @Cacheable(value = CacheNames.CALENDAR_LIST_CACHE, key = "#accessToken", cacheManager = "calendarCacheManager")
     public List<CalendarListEntry> getCalendarList(String accessToken, Instant expiresAt, String refreshToken) throws GeneralSecurityException, IOException {
         log.debug("Fetching calendar list for access token: {}", accessToken);
         val calendarClient = createCalendarClient(accessToken, expiresAt, refreshToken);
@@ -141,7 +141,7 @@ public class CalendarService {
      * @throws GeneralSecurityException If there's a security-related error
      * @throws IOException              If there's an I/O error during the API call
      */
-    @Cacheable(value = CacheNames.CALENDAR_EVENTS, key = "#accessToken + '-' + #calendarId + '-' + #days", cacheManager = "calendarCacheManager")
+    @Cacheable(value = CacheNames.CALENDAR_EVENTS_CACHE, key = "#accessToken + '-' + #calendarId + '-' + #days", cacheManager = "calendarCacheManager")
     public List<CalendarEvent> getCalendarEvents(String accessToken, Instant expiresAt, String refreshToken, String calendarId, int days) throws GeneralSecurityException, IOException {
         log.debug("Fetching calendar events for access token: {}, calendarId: {}, days: {}", accessToken, calendarId, days);
         Calendar calendarClient = createCalendarClient(accessToken, expiresAt, refreshToken);

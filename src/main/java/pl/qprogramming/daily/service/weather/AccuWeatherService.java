@@ -16,6 +16,8 @@ import pl.qprogramming.daily.service.weather.model.accuweather.AccuWeatherLocati
 
 import java.util.Arrays;
 
+import static pl.qprogramming.daily.config.CacheConfig.CacheNames.ACCU_FORECAST_CACHE;
+import static pl.qprogramming.daily.config.CacheConfig.CacheNames.FORECAST_CACHE;
 import static pl.qprogramming.daily.service.weather.WeatherConstants.*;
 
 /**
@@ -52,38 +54,11 @@ public class AccuWeatherService {
     }
 
     /**
-     * Gets the location key for the given coordinates from AccuWeather API.
-     *
-     * @param latitude  Latitude of the location
-     * @param longitude Longitude of the location
-     * @return AccuWeatherLocation containing the location key and other details
-     */
-    @Cacheable(value = "accuweatherLocation", key = "#latitude + '-' + #longitude")
-    public AccuWeatherLocation getLocationKey(double latitude, double longitude) {
-        try {
-            String url = UriComponentsBuilder.fromUriString(ACCU_WEATHER_LOCATION_URL)
-                    .queryParam("apikey", config.getApiKey())
-                    .queryParam("q", latitude + "," + longitude)
-                    .encode()
-                    .toUriString();
-
-            log.debug("Requesting location key from AccuWeather for lat: {}, lon: {}", latitude, longitude);
-            val response = restTemplate.getForObject(url, AccuWeatherLocation.class);
-            log.debug("Response from AccuWeather Location API: {}", response);
-            return response;
-        } catch (Exception e) {
-            log.error("Error fetching location key from AccuWeather for lat: {}, lon: {}: {}", latitude, longitude, e.getMessage());
-            return null;
-        }
-    }
-
-    /**
      * Gets current weather conditions for a location from AccuWeather API.
      *
      * @param locationKey AccuWeather location key
      * @return AccuWeatherCurrentConditions containing current weather data
      */
-    @Cacheable(value = "accuweatherCurrentConditions", key = "#locationKey")
     public AccuWeatherCurrentConditions getCurrentConditions(String locationKey) {
         try {
             String url = UriComponentsBuilder.fromUriString(ACCU_WEATHER_CURRENT_CONDITIONS_URL + "/" + locationKey)
@@ -95,7 +70,6 @@ public class AccuWeatherService {
             log.debug("Requesting current conditions from AccuWeather for location key: {}", locationKey);
             val response = restTemplate.getForObject(url, AccuWeatherCurrentConditions[].class);
             log.debug("Response from AccuWeather Current Conditions API: {}", response);
-
             // AccuWeather returns an array with a single item
             if (response != null && response.length > 0) {
                 return response[0];
@@ -111,10 +85,9 @@ public class AccuWeatherService {
      * Gets daily forecast for a location from AccuWeather API.
      *
      * @param locationKey AccuWeather location key
-     * @param days Number of days (default is 5, max is 5 for free accounts)
+     * @param days        Number of days (default is 5, max is 5 for free accounts)
      * @return AccuWeatherDailyForecast containing daily forecast data
      */
-    @Cacheable(value = "accuweatherDailyForecast", key = "#locationKey + '-' + #days")
     public AccuWeatherDailyForecast getDailyForecast(String locationKey, Integer days) {
         try {
             // AccuWeather free tier only supports 5-day forecasts
@@ -141,10 +114,9 @@ public class AccuWeatherService {
      * Gets hourly forecast for a location from AccuWeather API.
      *
      * @param locationKey AccuWeather location key
-     * @param hours Number of hours (default is 12, max is 12 for free accounts)
+     * @param hours       Number of hours (default is 12, max is 12 for free accounts)
      * @return AccuWeatherHourlyForecast containing hourly forecast data
      */
-    @Cacheable(value = "accuweatherHourlyForecast", key = "#locationKey + '-' + #hours")
     public AccuWeatherHourlyForecast getHourlyForecast(String locationKey, Integer hours) {
         try {
             // AccuWeather free tier only supports 12-hour forecasts
@@ -174,48 +146,22 @@ public class AccuWeatherService {
     }
 
     /**
-     * Gets complete weather forecast for a geographic location.
-     * <p>
-     * This method retrieves location key, current conditions, daily forecast, and hourly forecast
-     * from AccuWeather APIs and combines them into a single WeatherForecast object.
-     * </p>
-     *
-     * @param latitude Latitude of the location
-     * @param longitude Longitude of the location
-     * @param days Number of days to forecast
-     * @param hours Number of hours to forecast
-     * @return WeatherForecast containing current, daily, and hourly weather data
+     * Gets complete weather forecast using a known AccuWeather location key.
      */
-    @Cacheable(value = FORECAST_CACHE, key = "'accu-' + #latitude + '-' + #longitude + '-' + #days")
-    public WeatherForecast getWeatherForecast(double latitude, double longitude, Integer days, Integer hours) {
+    @Cacheable(value = ACCU_FORECAST_CACHE, key = "#locationKey + '-' + #days + '-' + #hours")
+    public WeatherForecast getWeatherForecast(String locationKey, Integer days, Integer hours) {
         try {
-            log.info("Fetching weather forecast from AccuWeather for lat: {}, lon: {}, days: {}, hours: {}",
-                    latitude, longitude, days, hours);
-
-            // Step 1: Get location key
-            AccuWeatherLocation location = getLocationKey(latitude, longitude);
-            if (location == null) {
-                log.error("Failed to get location key from AccuWeather for lat: {}, lon: {}", latitude, longitude);
-                return new WeatherForecast();
-            }
-
-            String locationKey = location.getKey();
-
-            // Step 2: Get current conditions
+            log.info("Fetching weather forecast from AccuWeather for key: {}, days: {}, hours: {}", locationKey, days, hours);
             AccuWeatherCurrentConditions currentConditions = getCurrentConditions(locationKey);
-
-            // Step 3: Get daily forecast
-            AccuWeatherDailyForecast dailyForecast = getDailyForecast(locationKey, days);
-
-            // Step 4: Get hourly forecast
+            AccuWeatherDailyForecast dailyForecast = null;
+            // Only fetch daily forecast if days > 1
+            if (days > 1) {
+                dailyForecast = getDailyForecast(locationKey, days);
+            }
             AccuWeatherHourlyForecast hourlyForecast = getHourlyForecast(locationKey, hours);
-
-            // Step 5: Use MapStruct mapper to combine everything into a WeatherForecast object
-            return mapper.createWeatherForecast(location, currentConditions, dailyForecast, hourlyForecast);
-
+            return mapper.createWeatherForecast(null, currentConditions, dailyForecast, hourlyForecast);
         } catch (Exception e) {
-            log.error("Error fetching weather forecast from AccuWeather for lat: {}, lon: {}: {}",
-                    latitude, longitude, e.getMessage());
+            log.error("Error fetching weather forecast from AccuWeather for key {}: {}", locationKey, e.getMessage());
             return new WeatherForecast();
         }
     }

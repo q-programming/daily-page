@@ -24,13 +24,15 @@ export const Weather = () => {
 
     const handleSaveSettings = (newSettings: WeatherSettings) => {
         // Check if city has changed
-        const requiresReinit = settings.city !== newSettings.city;
+        const requiresReinit =
+            settings.city !== newSettings.city || settings.provider !== newSettings.provider;
         setSettings(newSettings);
         // If critical settings changed, increment the key to force WeatherCard remount
         if (requiresReinit) {
             setSettingsKey((prevKey) => prevKey + 1);
         }
     };
+
     return (
         <Box
             className='weather-container'
