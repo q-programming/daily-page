@@ -108,8 +108,12 @@
     "cityDescription": "Ustaw swoje miasto dla danych pogodowych.",
     "cityPlaceholder": "np., Warszawa",
     "cityHelp": "Opcjonalnie: Pozostaw puste, aby użyć lokalizacji urządzenia",
-    "providerLabel": "Dostawca danych pogody",
-    "providerDescription": "Wybierz preferowanego dostawcę danych pogodowych.",
+    "provider": {
+      "openweather": "Open-Meteo",
+      "accuweather": "AccuWeather",
+      "label": "Dostawca danych pogody",
+      "providerDescription": "Wybierz preferowanego dostawcę danych pogodowych."
+    },
     "cancel": "Anuluj",
     "save": "Zapisz"
   },

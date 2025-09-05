@@ -107,8 +107,12 @@
     "cityDescription": "Set your city for weather data.",
     "cityLabel": "Your City",
     "cityPlaceholder": "e.g., London",
-    "providerLabel": "Weather data provider",
-    "providerDescription": "Select your preferred weather data provider.",
+    "provider": {
+      "openweather": "Open-Meteo",
+      "accuweather": "AccuWeather",
+      "label": "Weather data provider",
+      "providerDescription": "Select your preferred weather data provider."
+    },
     "cancel": "Cancel",
     "save": "Save"
   },

@@ -70,6 +70,20 @@ export class WeatherService {
                 locationKey: geocodingResult.locationKey,
             };
 
+            // Update weatherSettings in localStorage with the new geocoding data
+            const savedSettings = localStorage.getItem('weatherSettings');
+            const settings = savedSettings ? JSON.parse(savedSettings) : {};
+            const updatedSettings = {
+                ...settings,
+                city: this.city,
+                provider: this.provider,
+                latitude: this.latitude,
+                longitude: this.longitude,
+                locationKey: this.locationKey,
+                location: this.location,
+            };
+            localStorage.setItem('weatherSettings', JSON.stringify(updatedSettings));
+
             this.initialized = true;
         } catch (error) {
             console.error('Error initializing weather service:', error);
@@ -95,7 +109,6 @@ export class WeatherService {
             return Promise.resolve(null);
         }
         try {
-            // Use weatherApi to geocode city name with correct parameter syntax
             const response = await weatherApi.geocodeLocation(cityName, i18n.language, provider);
             return response.data || null;
         } catch (error) {
@@ -144,7 +157,7 @@ export class WeatherService {
             const response = await weatherApi.getOpenWeatherForecast(
                 this.latitude,
                 this.longitude,
-                5,
+                1,
             );
             return response.data || null;
         } catch (error) {
@@ -182,7 +195,7 @@ export class WeatherService {
         }
 
         try {
-            const response = await weatherApi.getAccuWeatherForecast(numericKey, 5);
+            const response = await weatherApi.getAccuWeatherForecast(numericKey, 1);
             return response.data || null;
         } catch (error) {
             console.error('Error fetching AccuWeather forecast data:', error);

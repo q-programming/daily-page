@@ -5,6 +5,7 @@ import type { WeatherSettings } from '../../types/types.ts';
 import { mockAirQualityData, mockGeocodingResult, mockWeatherForecast } from './weatherData.ts';
 // Direct import the class we're testing
 import { WeatherService } from '../weatherService.ts';
+import { WeatherProvider } from '@api';
 
 describe('WeatherService', () => {
     // Setup variables
@@ -17,6 +18,7 @@ describe('WeatherService', () => {
         mock = new MockAdapter(axios);
         const testSettings: WeatherSettings = {
             city: 'Test City',
+            provider: WeatherProvider.Openweather,
         };
         // Create instance of OpenWeatherService
         weatherService = new WeatherService(testSettings);
@@ -99,12 +101,12 @@ describe('WeatherService', () => {
         it('should properly store coordinates after initialization', async () => {
             await weatherService.initialize();
             mock.resetHistory();
-            mock.onGet(/\/daily\/api\/weather\/forecast/).reply(200, mockWeatherForecast);
+            mock.onGet(/\/daily\/api\/weather\/open\/forecast/).reply(200, mockWeatherForecast);
             // Call a method that uses the coordinates internally
             await weatherService.getOpenWeatherForecast();
             // Verify that the correct URL with coordinates was called
             const weatherCall = mock.history.get.find((call) =>
-                call.url?.includes('/daily/api/weather/forecast'),
+                call.url?.includes('/daily/api/weather/open/forecast'),
             );
             expect(weatherCall).toBeTruthy();
         });
@@ -116,7 +118,7 @@ describe('WeatherService', () => {
             mock.resetHistory();
             // Setup mock for weather data
             mock.onGet(/\/daily\/api\/weather\/location/).reply(200, mockGeocodingResult);
-            mock.onGet(/\/daily\/api\/weather\/forecast/).reply(200, mockWeatherForecast);
+            mock.onGet(/\/daily\/api\/weather\/open\/forecast/).reply(200, mockWeatherForecast);
         });
 
         it('getWeatherForecast should return hourly forecast data', async () => {
@@ -129,7 +131,7 @@ describe('WeatherService', () => {
 
             // Verify the API was called with expected parameters
             const forecastCall = mock.history.get.find((call) =>
-                call.url?.includes('/daily/api/weather/forecast'),
+                call.url?.includes('/daily/api/weather/open/forecast'),
             );
             expect(forecastCall).toBeTruthy();
         });

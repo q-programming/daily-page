@@ -83,11 +83,11 @@ export const WeatherSettingsDialog = ({ settings, onSaveSettings }: WeatherSetti
                     </Box>
                     <Box sx={{ pt: 1 }}>
                         <Typography variant='body2' color='text.secondary' paragraph>
-                            {t('settings.providerLabel')}
+                            {t('settings.provider.providerDescription')}
                         </Typography>
                         <FormControl fullWidth margin='normal'>
                             <InputLabel id='weather-provider-label'>
-                                {t('settings.providerLabel')}
+                                {t('settings.provider.label')}
                             </InputLabel>
                             <Select
                                 labelId='weather-provider-label'
@@ -103,9 +103,9 @@ export const WeatherSettingsDialog = ({ settings, onSaveSettings }: WeatherSetti
                                 }
                                 data-testid='weather-settings-provider'
                             >
-                                {Object.values(WeatherProviders).map((p) => (
-                                    <MenuItem key={p} value={p}>
-                                        {p}
+                                {Object.values(WeatherProviders).map((provider) => (
+                                    <MenuItem key={provider} value={provider}>
+                                        {t(`settings.provider.${provider}`)}
                                     </MenuItem>
                                 ))}
                             </Select>

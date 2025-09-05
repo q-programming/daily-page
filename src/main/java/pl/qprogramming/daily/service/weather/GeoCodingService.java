@@ -72,12 +72,9 @@ public class GeoCodingService {
     @Cacheable(value = ACCU_GEOCODING_CACHE, key = "#cityName + '-' + #language")
     public GeocodingResult getAccuLocationKey(String cityName, String language) {
         try {
-            String url = UriComponentsBuilder.fromUriString(ACCU_WEATHER_CITY_SEARCH_URL)
-                    .queryParam("apikey", config.getApiKey())
-                    .queryParam("q", cityName)
-                    .queryParam("language", language != null ? language : DEFAULT_LANGUAGE)
-                    .encode()
-                    .toUriString();
+            String url = ACCU_WEATHER_CITY_SEARCH_URL + "?apikey=" + config.getApiKey() +
+                    "&q=" + cityName +
+                    "&language=" + (language != null ? language : DEFAULT_LANGUAGE);
 
             log.debug("Requesting location key from AccuWeather for city: {}", cityName);
             val response = restTemplate.getForObject(url, AccuWeatherLocation[].class);
@@ -98,13 +95,9 @@ public class GeoCodingService {
     @Cacheable(value = "accuweatherLocationDetails", key = "#locationKey + '-' + #language")
     public AccuWeatherLocation getAccuLocationDetails(String locationKey, String language) {
         try {
-            String url = UriComponentsBuilder.fromUriString(ACCU_WEATHER_CURRENT_CONDITIONS_URL)
-                    // go up to base host and use locations details endpoint
-                    .replacePath("/locations/v1/" + locationKey)
-                    .queryParam("apikey", config.getApiKey())
-                    .queryParam("language", language != null ? language : DEFAULT_LANGUAGE)
-                    .encode()
-                    .toUriString();
+            String url = ACCU_WEATHER_LOCATION_URL + "/" + locationKey +
+                    "?apikey=" + config.getApiKey() +
+                    "&language=" + (language != null ? language : DEFAULT_LANGUAGE);
 
             log.debug("Requesting location details from AccuWeather for key: {}", locationKey);
             return restTemplate.getForObject(url, AccuWeatherLocation.class);
