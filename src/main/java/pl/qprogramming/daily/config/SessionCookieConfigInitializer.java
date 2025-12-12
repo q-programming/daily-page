@@ -12,7 +12,7 @@ import javax.servlet.SessionCookieConfig;
 @Slf4j
 public class SessionCookieConfigInitializer implements ServletContextInitializer {
 
-    private static final int MAX_AGE_SECONDS = 14 * 24 * 60 * 60; // 14 days
+    private static final int MAX_AGE_SECONDS = 180 * 24 * 60 * 60; // 180 days
 
     @Override
     public void onStartup(ServletContext servletContext) throws ServletException {

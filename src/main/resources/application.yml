@@ -37,9 +37,9 @@ server:
   servlet:
     context-path: /daily
     session:
-      timeout: 14d           # Keep server-side session alive for 14 days
+      timeout: 180d           # Keep server-side session alive for 14 days
       cookie:
-        max-age: 14d         # Make JSESSIONID persistent for 14 days
+        max-age: 180d         # Make JSESSIONID persistent for 14 days
         same-site: Lax       # Helps the browser keep the cookie across restarts and top-level navs
         secure: true         #  serving over HTTPS
   port: 8080
